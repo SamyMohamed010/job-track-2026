@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'company_register_step3_screen.dart';
 import '../company_data.dart';
+import '../../../app_localization.dart';
 
 class CompanyRegisterStep2Screen extends StatefulWidget {
+  const CompanyRegisterStep2Screen({super.key});
+
   @override
   _CompanyRegisterStep2ScreenState createState() => _CompanyRegisterStep2ScreenState();
 }
@@ -28,11 +31,33 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AnimatedBuilder(
+      animation: appLocalization,
+      builder: (context, child) {
+        return Scaffold(
       backgroundColor: const Color(0xFFEBEEF4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
+        title: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5),
+            ],
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/logo.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Color(0xFF229BD8), size: 20),
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -45,12 +70,12 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            _buildProgressBar(2, "Company Details"),
+            _buildProgressBar(2, appLocalization.translate('company_details')),
             const SizedBox(height: 30),
             
             // Company Name
             _buildTextField(
-              "Company Name", 
+              appLocalization.translate('company_name'), 
               _nameController,
               validator: (value) {
                 if (value == null || value.isEmpty) return 'Please enter company name';
@@ -65,7 +90,7 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
             
             // Company Overview
             _buildTextField(
-              "Company Overview\nWe are a software development\ncompany specializing in mobile\nand web applications...", 
+              appLocalization.translate('tell_us_more'), 
               _overviewController,
               maxLines: 4,
               validator: (value) {
@@ -77,7 +102,7 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
             
             // Location
             _buildTextField(
-              "Location", 
+              appLocalization.translate('location'), 
               _locationController,
               validator: (value) {
                 if (value == null || value.isEmpty) return 'Please enter company location';
@@ -88,7 +113,7 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
             
             // Website
             _buildTextField(
-              "Website", 
+              appLocalization.translate('website'), 
               _websiteController,
               validator: (value) {
                 if (value == null || value.isEmpty) return 'Please enter company website';
@@ -108,7 +133,7 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                       side: const BorderSide(color: Color(0xFF229BD8)),
                     ),
-                    child: const Text("Back", style: TextStyle(fontSize: 16, color: Color(0xFF229BD8), fontWeight: FontWeight.bold)),
+                    child: Text(appLocalization.translate('back', defaultText: 'Back'), style: const TextStyle(fontSize: 16, color: Color(0xFF229BD8), fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -138,7 +163,7 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
                       elevation: 5,
                       shadowColor: const Color(0xFF229BD8).withOpacity(0.5),
                     ),
-                    child: const Text("Next", style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text(appLocalization.translate('next'), style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -147,6 +172,8 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
         ),
         ),
       ),
+    );
+      },
     );
   }
 

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'company_register_step2_screen.dart';
+import 'company_login_screen.dart';
+import '../../../app_localization.dart';
 
 class CompanyRegisterScreen extends StatefulWidget {
+  const CompanyRegisterScreen({super.key});
+
   @override
   _CompanyRegisterScreenState createState() => _CompanyRegisterScreenState();
 }
@@ -11,6 +15,8 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -22,11 +28,44 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AnimatedBuilder(
+      animation: appLocalization,
+      builder: (context, child) {
+        return Scaffold(
       backgroundColor: const Color(0xFFEBEEF4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
+        actions: [
+          TextButton.icon(
+            onPressed: () => appLocalization.toggleLanguage(),
+            icon: const Icon(Icons.language, size: 24, color: Color(0xFF229BD8)),
+            label: Text(
+              appLocalization.locale.languageCode == 'en' ? 'عربي' : 'English',
+              style: const TextStyle(fontSize: 16, color: Color(0xFF229BD8), fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
+        title: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5),
+            ],
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/logo.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Color(0xFF229BD8), size: 20),
+            ),
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -35,12 +74,12 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProgressBar(1, "Company Registration"),
+              _buildProgressBar(1, appLocalization.translate('company_registration')),
               const SizedBox(height: 30),
 
               // Email
               _buildTextField(
-                "Email",
+                appLocalization.translate('email'),
                 _emailController,
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Please enter your email';
@@ -52,9 +91,20 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
 
               // Password
               _buildTextField(
-                "Password",
+                appLocalization.translate('password'),
                 _passwordController,
-                isPassword: true,
+                isPassword: _obscurePassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: const Color(0xFF7E848E),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Please enter a password';
                   if (value.length < 6) return 'Password must be at least 6 characters';
@@ -65,9 +115,20 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
 
               // Confirm Password
               _buildTextField(
-                "Confirm Password",
+                appLocalization.translate('confirm_password'),
                 _confirmPasswordController,
-                isPassword: true,
+                isPassword: _obscureConfirmPassword,
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                    color: const Color(0xFF7E848E),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Please confirm your password';
                   if (value != _passwordController.text) return 'Passwords do not match';
@@ -94,9 +155,9 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
                     elevation: 5,
                     shadowColor: const Color(0xFF229BD8).withOpacity(0.5),
                   ),
-                  child: const Text(
-                    "Next",
-                    style: TextStyle(
+                  child: Text(
+                    appLocalization.translate('next'),
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -105,19 +166,33 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-              const Center(
-                child: Text(
-                  "Already have an account? Sign In",
-                  style: TextStyle(
-                    color: Color(0xFF7E848E),
-                    fontWeight: FontWeight.w500,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    appLocalization.translate('already_have_account'),
+                    style: const TextStyle(color: Color(0xFF7E848E), fontWeight: FontWeight.w500),
                   ),
-                ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CompanyLoginScreen()),
+                      );
+                    },
+                    child: Text(
+                      appLocalization.translate('login'),
+                      style: const TextStyle(color: Color(0xFF229BD8), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
+    );
+      },
     );
   }
 
@@ -179,6 +254,7 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
     String hint,
     TextEditingController controller, {
     bool isPassword = false,
+    Widget? suffixIcon,
     String? Function(String?)? validator,
   }) {
     return Container(
@@ -202,6 +278,7 @@ class _CompanyRegisterScreenState extends State<CompanyRegisterScreen> {
           hintText: hint,
           hintStyle: const TextStyle(color: Color(0xFF7E848E)),
           border: InputBorder.none,
+          suffixIcon: suffixIcon,
         ),
       ),
     );

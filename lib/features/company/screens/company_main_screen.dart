@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'company_profile_screen.dart';
+import 'company_post_job_screen.dart';
 
 class CompanyMainScreen extends StatefulWidget {
+  const CompanyMainScreen({super.key});
+
   @override
   _CompanyMainScreenState createState() => _CompanyMainScreenState();
 }
@@ -10,7 +13,7 @@ class _CompanyMainScreenState extends State<CompanyMainScreen> {
   int _currentIndex = 1; // Default to Profile
 
   final List<Widget> _pages = [
-    const Center(child: Text("Post Job Screen (Coming Soon)")), // Placeholder
+    CompanyPostJobScreen(),
     CompanyProfileScreen(),
   ];
 

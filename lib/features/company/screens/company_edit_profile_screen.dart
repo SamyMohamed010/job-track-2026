@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'company_notifications_sheet.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../company_data.dart';
 
 class CompanyEditProfileScreen extends StatefulWidget {
+  const CompanyEditProfileScreen({super.key});
+
   @override
   _CompanyEditProfileScreenState createState() => _CompanyEditProfileScreenState();
 }
@@ -58,12 +61,40 @@ class _CompanyEditProfileScreenState extends State<CompanyEditProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text("Edit Profile", style: TextStyle(color: Colors.black)),
-        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
+        title: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Color(0xFF229BD8), size: 15),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text("Edit Profile", style: TextStyle(color: Colors.black, fontSize: 18)),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications, color: Color(0xFFFDA00C)),
+            onPressed: () => showCompanyNotifications(context),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

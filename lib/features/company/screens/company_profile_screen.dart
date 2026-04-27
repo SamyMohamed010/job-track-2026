@@ -3,8 +3,13 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../company_data.dart';
 import 'company_edit_profile_screen.dart';
+import 'company_job_applicants_screen.dart';
+import 'company_edit_job_screen.dart';
+import 'company_notifications_sheet.dart';
 
 class CompanyProfileScreen extends StatefulWidget {
+  const CompanyProfileScreen({super.key});
+
   @override
   _CompanyProfileScreenState createState() => _CompanyProfileScreenState();
 }
@@ -43,9 +48,18 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.business, color: Color(0xFF229BD8), size: 20),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Color(0xFF229BD8), size: 20),
+                      ),
+                    ),
                   ),
-                  const Icon(Icons.notifications, color: Color(0xFFFDA00C)),
+                  GestureDetector(
+                    onTap: () => showCompanyNotifications(context),
+                    child: const Icon(Icons.notifications, color: Color(0xFFFDA00C)),
+                  ),
                 ],
               ),
             ),
@@ -208,21 +222,37 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     const Divider(color: Colors.grey, thickness: 0.5),
                     const SizedBox(height: 40),
 
-                    // Empty State - No Jobs
-                    const Icon(
-                      Icons.work_outline,
-                      size: 60,
-                      color: Color(0xFFB0B5BD),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      "No jobs yet",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF7E848E),
+                    // Jobs List or Empty State
+                    if (data.jobs.isEmpty) ...[
+                      const Icon(
+                        Icons.work_outline,
+                        size: 60,
+                        color: Color(0xFFB0B5BD),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        "No jobs yet",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7E848E),
+                        ),
+                      ),
+                    ] else ...[
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Posted Jobs",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ...data.jobs.map((job) => buildJobCard(job)),
+                    ],
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -230,6 +260,201 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget buildJobCard(JobModel job) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                job.title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF229BD8).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  job.jobType,
+                  style: const TextStyle(
+                    color: Color(0xFF229BD8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.location_on, color: Colors.redAccent, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                "${job.location} (${job.locationType})",
+                style: const TextStyle(color: Color(0xFF7E848E), fontSize: 14),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  job.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Color(0xFF7E848E), fontSize: 14),
+                ),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  final index = CompanyData().jobs.indexOf(job);
+                  if (index != -1) {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CompanyEditJobScreen(job: job, jobIndex: index),
+                      ),
+                    );
+                    if (result == true) {
+                      _refresh();
+                    }
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF229BD8)),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.edit, color: Color(0xFF229BD8), size: 14),
+                      SizedBox(width: 4),
+                      Text("Edit", style: TextStyle(color: Color(0xFF229BD8), fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Colors.black12, thickness: 1),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Deadline: ${job.deadline}",
+                style: const TextStyle(color: Color(0xFFFDA00C), fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                "\$${job.salaryFrom} - \$${job.salaryTo}",
+                style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Delete Button
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Delete Job"),
+                      content: const Text("Are you sure you want to delete this job?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            CompanyData().jobs.remove(job);
+                            Navigator.pop(context);
+                            _refresh();
+                          },
+                          child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.delete_outline, color: Colors.red, size: 16),
+                      SizedBox(width: 4),
+                      Text("Delete", style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // View Applicants Button
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CompanyJobApplicantsScreen(jobTitle: job.title),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF229BD8),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.people_outline, color: Colors.white, size: 16),
+                      SizedBox(width: 4),
+                      Text("View", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

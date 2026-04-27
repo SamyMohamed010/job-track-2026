@@ -1,5 +1,29 @@
 import 'package:image_picker/image_picker.dart';
 
+class JobModel {
+  final String title;
+  final String description;
+  final String requirements;
+  final String location;
+  final String locationType;
+  final String jobType;
+  final String salaryFrom;
+  final String salaryTo;
+  final String deadline;
+
+  JobModel({
+    required this.title,
+    required this.description,
+    required this.requirements,
+    required this.location,
+    required this.locationType,
+    required this.jobType,
+    required this.salaryFrom,
+    required this.salaryTo,
+    required this.deadline,
+  });
+}
+
 class CompanyData {
   static final CompanyData _instance = CompanyData._internal();
   factory CompanyData() => _instance;
@@ -13,4 +37,6 @@ class CompanyData {
   
   XFile? logoImage;
   XFile? licenseImage;
+  
+  List<JobModel> jobs = [];
 }

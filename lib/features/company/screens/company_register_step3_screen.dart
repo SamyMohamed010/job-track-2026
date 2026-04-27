@@ -3,8 +3,11 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import '../company_data.dart';
+import '../../../app_localization.dart';
 
 class CompanyRegisterStep3Screen extends StatefulWidget {
+  const CompanyRegisterStep3Screen({super.key});
+
   @override
   _CompanyRegisterStep3ScreenState createState() =>
       _CompanyRegisterStep3ScreenState();
@@ -40,11 +43,33 @@ class _CompanyRegisterStep3ScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AnimatedBuilder(
+      animation: appLocalization,
+      builder: (context, child) {
+        return Scaffold(
       backgroundColor: const Color(0xFFEBEEF4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
+        title: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5),
+            ],
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/logo.png',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Color(0xFF229BD8), size: 20),
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -55,24 +80,24 @@ class _CompanyRegisterStep3ScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProgressBar(3, "Upload Documents"),
+            _buildProgressBar(3, appLocalization.translate('upload_documents')),
             const SizedBox(height: 30),
 
-            const Text(
-              "Company Logo",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Text(
+              appLocalization.translate('company_logo'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 10),
-            _buildImagePicker("Upload Logo", _logoImage, pickLogo),
+            _buildImagePicker(appLocalization.translate('upload_logo'), _logoImage, pickLogo),
 
             const SizedBox(height: 20),
 
-            const Text(
-              "Company License",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Text(
+              appLocalization.translate('commercial_license'),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 10),
-            _buildImagePicker("Upload License", _licenseImage, pickLicense),
+            _buildImagePicker(appLocalization.translate('upload_license'), _licenseImage, pickLicense),
 
             const SizedBox(height: 40),
 
@@ -113,9 +138,9 @@ class _CompanyRegisterStep3ScreenState
                   elevation: 5,
                   shadowColor: const Color(0xFF229BD8).withOpacity(0.5),
                 ),
-                child: const Text(
-                  "Register",
-                  style: TextStyle(
+                child: Text(
+                  appLocalization.translate('register'),
+                  style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -126,6 +151,8 @@ class _CompanyRegisterStep3ScreenState
           ],
         ),
       ),
+    );
+      },
     );
   }
 

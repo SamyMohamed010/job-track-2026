@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class CompanyApprovalScreen extends StatelessWidget {
+  const CompanyApprovalScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
