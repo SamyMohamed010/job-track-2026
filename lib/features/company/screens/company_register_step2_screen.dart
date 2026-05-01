@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'company_register_step3_screen.dart';
 import '../company_data.dart';
 import '../../../app_localization.dart';
+import '../../../shared/services/location_service.dart';
 
 class CompanyRegisterStep2Screen extends StatefulWidget {
   const CompanyRegisterStep2Screen({super.key});
@@ -39,25 +40,7 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        title: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5),
-            ],
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/logo.png',
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Color(0xFF229BD8), size: 20),
-            ),
-          ),
-        ),
+        title: null,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -70,6 +53,28 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Logo
+              Center(
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, color: Color(0xFF229BD8), size: 40),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
             _buildProgressBar(2, appLocalization.translate('company_details')),
             const SizedBox(height: 30),
             
@@ -104,6 +109,23 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
             _buildTextField(
               appLocalization.translate('location'), 
               _locationController,
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.my_location, color: Color(0xFF229BD8)),
+                onPressed: () async {
+                  try {
+                    final location = await LocationService.getCurrentLocation();
+                    if (location != null) {
+                      setState(() {
+                        _locationController.text = location;
+                      });
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
+                },
+              ),
               validator: (value) {
                 if (value == null || value.isEmpty) return 'Please enter company location';
                 return null;
@@ -227,7 +249,7 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
     );
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, String? Function(String?)? validator}) {
+  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, String? Function(String?)? validator, Widget? suffixIcon}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
@@ -249,6 +271,7 @@ class _CompanyRegisterStep2ScreenState extends State<CompanyRegisterStep2Screen>
           hintText: hint,
           hintStyle: const TextStyle(color: Color(0xFF7E848E)),
           border: InputBorder.none,
+          suffixIcon: suffixIcon,
         ),
       ),
     );

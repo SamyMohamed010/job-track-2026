@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../company_data.dart';
 import 'company_notifications_sheet.dart';
+import '../../../shared/services/location_service.dart';
 
 class CompanyPostJobScreen extends StatefulWidget {
   const CompanyPostJobScreen({super.key});
@@ -96,6 +97,23 @@ class _CompanyPostJobScreenState extends State<CompanyPostJobScreen> {
                         "Location", 
                         _locationController,
                         prefixIcon: const Icon(Icons.location_on, color: Colors.red, size: 20),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.my_location, color: Color(0xFF229BD8), size: 20),
+                          onPressed: () async {
+                            try {
+                              final location = await LocationService.getCurrentLocation();
+                              if (location != null) {
+                                setState(() {
+                                  _locationController.text = location;
+                                });
+                              }
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(e.toString())),
+                              );
+                            }
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -234,7 +252,7 @@ class _CompanyPostJobScreenState extends State<CompanyPostJobScreen> {
     );
   }
 
-  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, Widget? prefixIcon, TextInputType? keyboardType, bool readOnly = false, VoidCallback? onTap, List<TextInputFormatter>? inputFormatters, String? Function(String?)? validator}) {
+  Widget _buildTextField(String hint, TextEditingController controller, {int maxLines = 1, Widget? prefixIcon, Widget? suffixIcon, TextInputType? keyboardType, bool readOnly = false, VoidCallback? onTap, List<TextInputFormatter>? inputFormatters, String? Function(String?)? validator}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: prefixIcon != null ? 8 : 16, vertical: 4),
       decoration: BoxDecoration(
@@ -261,6 +279,7 @@ class _CompanyPostJobScreenState extends State<CompanyPostJobScreen> {
           hintStyle: const TextStyle(color: Color(0xFF7E848E)),
           border: InputBorder.none,
           prefixIcon: prefixIcon,
+          suffixIcon: suffixIcon,
         ),
       ),
     );
