@@ -96,6 +96,33 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             CustomNotificationButton(onPressed: () {}),
+            IconButton(
+              icon: const Icon(Icons.logout, color: kPrimaryBlue),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(isArabic ? "تأكيد تسجيل الخروج" : "Confirm Logout", style: const TextStyle(color: kPrimaryBlue, fontWeight: FontWeight.bold)),
+                    content: Text(isArabic ? "هل أنت متأكد أنك تريد تسجيل الخروج؟" : "Are you sure you want to log out?"),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(isArabic ? "إلغاء" : "Cancel", style: const TextStyle(color: kGreyText)),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context); // close dialog
+                          Navigator.pop(context); // close admin screen (logout)
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade50, elevation: 0),
+                        child: Text(isArabic ? "خروج" : "Logout", style: const TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
             const SizedBox(width: 10),
           ],
         ),

@@ -171,28 +171,23 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         Container(
-          margin: const EdgeInsets.only(
-            top: 5,
-            bottom: 5,
-          ), // مسافة من الأعلى والأسفل
-          height: 85, // كبرنا الحجم
-          width: 85,
+          margin: const EdgeInsets.only(top: 5, bottom: 5),
+          height: 85, width: 85,
           clipBehavior: Clip.hardEdge,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                // ignore: deprecated_member_use
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 10,
-                spreadRadius: 2,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Image.asset(
             'assets/images/logo image.jpg',
-            fit: BoxFit.cover, // مهم عشان الصورة تملأ الدائرة
+            fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return const Icon(Icons.image_not_supported, size: 50);
             },
@@ -202,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           texts['welcomeBack']!,
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
             color: primaryBlue,
           ),
@@ -214,13 +209,14 @@ class _LoginScreenState extends State<LoginScreen> {
   InputDecoration _inputDecoration(String hint, {IconData? icon}) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: isArabic ? null : Icon(icon, color: primaryBlue, size: 20),
-      suffixIcon: isArabic ? Icon(icon, color: primaryBlue, size: 20) : null,
+      hintStyle: TextStyle(color: Colors.grey.shade300, fontSize: 12),
+      prefixIcon: isArabic ? null : Icon(icon, color: primaryBlue, size: 15),
+      suffixIcon: isArabic ? Icon(icon, color: primaryBlue, size: 15) : null,
       fillColor: Colors.white,
       filled: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
         borderSide: BorderSide.none,
       ),
     );
@@ -229,15 +225,15 @@ class _LoginScreenState extends State<LoginScreen> {
   InputDecoration _passwordDecoration() {
     return InputDecoration(
       hintText: "••••••••",
+      hintStyle: TextStyle(color: Colors.grey.shade300, fontSize: 12),
       prefixIcon: isArabic
           ? null
-          : Icon(Icons.lock_outline, color: primaryBlue, size: 20),
-      // استبدال الإيموجي بأيقونة العين الكلاسيكية
+          : Icon(Icons.lock_outline, color: primaryBlue, size: 15),
       suffixIcon: IconButton(
         icon: Icon(
           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
           color: primaryBlue,
-          size: 20,
+          size: 15,
         ),
         onPressed: () =>
             setState(() => _isPasswordVisible = !_isPasswordVisible),
@@ -246,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
       filled: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
         borderSide: BorderSide.none,
       ),
     );
@@ -262,11 +258,11 @@ class _LoginScreenState extends State<LoginScreen> {
           style: TextStyle(
             color: grayTextColor,
             fontWeight: FontWeight.w500,
-            fontSize: 13,
+            fontSize: 14,
           ),
         ),
         if (hasError)
-          const Text(' *', style: TextStyle(color: Colors.red, fontSize: 13)),
+          const Text(' *', style: TextStyle(color: Colors.red, fontSize: 14)),
       ],
     );
   }
@@ -413,14 +409,15 @@ class _LoginScreenState extends State<LoginScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(15),
             side: borderColor != null
                 ? BorderSide(color: borderColor)
                 : (bg == Colors.white
                       ? BorderSide(color: primaryBlue)
                       : BorderSide.none),
           ),
-          elevation: 0,
+          elevation: bg == Colors.white ? 0 : 4,
+          shadowColor: Colors.black26,
         ),
         child: Text(
           title,

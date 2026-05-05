@@ -60,8 +60,28 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          // Logout to Splash or Login
-                          Navigator.pushNamedAndRemoveUntil(context, '/splash', (route) => false);
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Confirm Logout / تأكيد الخروج", style: TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold)),
+                              content: const Text("Are you sure you want to log out?\nهل أنت متأكد من تسجيل الخروج؟"),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("Cancel / إلغاء", style: TextStyle(color: Color(0xFF7E848E))),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    Navigator.pushNamedAndRemoveUntil(context, '/splash', (route) => false);
+                                  },
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade50, elevation: 0),
+                                  child: const Text("Logout / خروج", style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          );
                         },
                         child: const Icon(Icons.logout, color: Color(0xFF7E848E), size: 22),
                       ),

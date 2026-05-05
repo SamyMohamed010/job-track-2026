@@ -19,6 +19,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final int currentYear = 2026;
   final Color primaryBlue = const Color(0xFF229BD8);
   final Color grayTextColor = const Color(0xFF7E848E);
+  final Color frameBg = const Color(0xFFEBEEF4);
+  final Color orangeColor = const Color(0xFFFDA00C);
 
   String? selectedFaculty;
   String? selectedMajor;
@@ -50,8 +52,20 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       'imgLabel': isAr ? "صورة الملف" : "Profile Image",
       'saveBtn': isAr ? "حفظ واستمرار" : "Save & Continue",
       'studentYears': isAr
-          ? ["السنة الأولى", "السنة الثانية", "السنة الثالثة", "السنة الرابعة"]
-          : ["First Year", "Second Year", "Third Year", "Fourth Year"],
+          ? [
+              "السنة الأولى",
+              "السنة الثانية",
+              "السنة الثالثة",
+              "السنة الرابعة",
+              if (selectedFaculty == "كلية الهندسة" || selectedFaculty == "Engineering") "السنة الخامسة"
+            ]
+          : [
+              "First Year",
+              "Second Year",
+              "Third Year",
+              "Fourth Year",
+              if (selectedFaculty == "Engineering" || selectedFaculty == "كلية الهندسة") "Fifth Year"
+            ],
       'gradYears': List.generate(10, (index) => (currentYear - index).toString()),
       'faculties': isAr
           ? ["كلية الحاسبات", "كلية الهندسة", "كلية العلوم", "كلية التجارة"]
@@ -164,12 +178,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       builder: (context, child) {
         bool isAr = appLocalization.locale.languageCode == 'ar';
         return Scaffold(
-          backgroundColor: const Color(0xFFEBEEF4),
+          backgroundColor: frameBg,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFFDA00C), size: 20),
+              icon: Icon(Icons.arrow_back_ios, color: orangeColor, size: 15),
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
@@ -183,15 +197,20 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
           ),
           body: Directionality(
             textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(child: _buildLogo()),
-                  const SizedBox(height: 20),
-                  Text(content['title'], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryBlue)),
-                  const SizedBox(height: 25),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Center(child: _buildLogo()),
+                const SizedBox(height: 15),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(content['title'], style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryBlue)),
+                        const SizedBox(height: 25),
+
                   _buildLabel(content['statusLabel']),
                   Row(
                     children: [
@@ -213,10 +232,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                             children: [
                               _buildLabel(content['majorLabel']),
                               Container(
-                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+                                width: 350,
+                                decoration: BoxDecoration(
+                                  color: Colors.white, 
+                                  borderRadius: BorderRadius.circular(15), 
+                                  border: Border.all(color: Colors.grey.shade100),
+                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                                ),
                                 child: TextField(
                                   onChanged: (val) => setState(() => selectedMajor = val),
-                                  decoration: InputDecoration(hintText: isAr ? "مثلاً: علوم حاسب" : "e.g. CS", border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
+                                  style: const TextStyle(fontSize: 12),
+                                  decoration: InputDecoration(hintText: isAr ? "مثلاً: علوم حاسب" : "e.g. CS", hintStyle: TextStyle(color: Colors.grey.shade300, fontSize: 12), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
                                 ),
                               ),
                             ],
@@ -237,10 +263,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     const SizedBox(height: 15),
                     _buildLabel(content['programLabel']),
                     Container(
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+                      width: 350,
+                      decoration: BoxDecoration(
+                        color: Colors.white, 
+                        borderRadius: BorderRadius.circular(15), 
+                        border: Border.all(color: Colors.grey.shade100),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                      ),
                       child: TextField(
                         onChanged: (val) => setState(() => selectedProgram = val),
-                        decoration: InputDecoration(hintText: isAr ? "مثلاً: فيزياء حاسب" : "e.g. Computer Physics", border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
+                        style: const TextStyle(fontSize: 12),
+                        decoration: InputDecoration(hintText: isAr ? "مثلاً: فيزياء حاسب" : "e.g. Computer Physics", hintStyle: TextStyle(color: Colors.grey.shade300, fontSize: 12), border: InputBorder.none, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -261,12 +294,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     ),
                     const SizedBox(height: 30),
                     _buildSaveButton(),
-                  ],
-                ],
+                      ],
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        );
+        ),
+      );
       },
     );
   }
@@ -284,8 +320,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(color: isSelected ? primaryBlue : Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: isSelected ? primaryBlue : Colors.black12)),
-        child: Center(child: Text(title, style: TextStyle(color: isSelected ? Colors.white : grayTextColor, fontWeight: FontWeight.bold))),
+      decoration: BoxDecoration(
+        color: isSelected ? primaryBlue : Colors.white, 
+        borderRadius: BorderRadius.circular(15), 
+        border: Border.all(color: isSelected ? primaryBlue : Colors.black12),
+        boxShadow: [if (!isSelected) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Center(child: Text(title, style: TextStyle(color: isSelected ? Colors.white : grayTextColor, fontWeight: FontWeight.bold, fontSize: 12))),
       ),
     );
   }
@@ -294,14 +335,21 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   Widget _buildDropdown(String? value, String hint, List<String> items, Function(String?) onChanged) {
     return Container(
+      width: 350,
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(15), 
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: items.contains(value) ? value : null,
           isExpanded: true,
-          hint: Text(hint, style: const TextStyle(fontSize: 14, color: Colors.black26)),
-          items: items.map((i) => DropdownMenuItem(value: i, child: Text(i))).toList(),
+          dropdownColor: Colors.white,
+          hint: Text(hint, style: TextStyle(fontSize: 12, color: Colors.grey.shade300)),
+          items: items.map((i) => DropdownMenuItem(value: i, child: Text(i, style: const TextStyle(fontSize: 12)))).toList(),
           onChanged: onChanged,
         ),
       ),
@@ -315,28 +363,99 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       children: [
         _buildLabel(content['skillsLabel']),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
           child: Row(
             children: [
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+              const SizedBox(width: 8),
               Expanded(
-                child: TextField(
-                  controller: _skillController,
-                  decoration: InputDecoration(hintText: isAr ? "أضف مهارة..." : "Add skill...", border: InputBorder.none),
-                  onSubmitted: (v) {
-                    if (v.trim().isNotEmpty) setState(() { skills.add(v.trim()); _skillController.clear(); });
-                  },
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: skills.isEmpty 
+                      ? [Text(isAr ? "لا توجد مهارات" : "No skills added", style: TextStyle(color: Colors.grey.shade400, fontSize: 12))]
+                      : skills.map((s) => _buildModernSkillChip(s)).toList(),
+                  ),
                 ),
               ),
-              IconButton(icon: Icon(Icons.add_circle, color: primaryBlue), onPressed: () {
-                if (_skillController.text.trim().isNotEmpty) setState(() { skills.add(_skillController.text.trim()); _skillController.clear(); });
-              }),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _showAddSkillDialog(context),
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(color: primaryBlue, shape: BoxShape.circle),
+                  child: const Icon(Icons.add, color: Colors.white, size: 18),
+                ),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
-        Wrap(spacing: 8, children: skills.map((s) => Chip(label: Text(s), onDeleted: () => setState(() => skills.remove(s)))).toList()),
       ],
+    );
+  }
+
+  Widget _buildModernSkillChip(String skill) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F7FF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: primaryBlue.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(skill, style: TextStyle(color: primaryBlue, fontSize: 12, fontWeight: FontWeight.w500)),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: () => setState(() => skills.remove(skill)),
+            child: Icon(Icons.close, size: 14, color: primaryBlue.withOpacity(0.6)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddSkillDialog(BuildContext context) {
+    bool isAr = appLocalization.locale.languageCode == 'ar';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(isAr ? "إضافة مهارة" : "Add Skill"),
+        content: TextField(
+          controller: _skillController,
+          autofocus: true,
+          decoration: InputDecoration(hintText: isAr ? "اسم المهارة..." : "Skill name..."),
+          onSubmitted: (val) {
+            if (val.trim().isNotEmpty) {
+              setState(() => skills.add(val.trim()));
+              _skillController.clear();
+              Navigator.pop(context);
+            }
+          },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(isAr ? "إلغاء" : "Cancel")),
+          ElevatedButton(
+            onPressed: () {
+              if (_skillController.text.trim().isNotEmpty) {
+                setState(() => skills.add(_skillController.text.trim()));
+                _skillController.clear();
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: primaryBlue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: Text(isAr ? "إضافة" : "Add", style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -345,8 +464,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       onTap: onTap,
       child: Container(
         height: 50,
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: primaryBlue, size: 20), const SizedBox(width: 8), Flexible(child: Text(title, style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis))]),
+        decoration: BoxDecoration(
+          color: Colors.white, 
+          borderRadius: BorderRadius.circular(15), 
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, color: primaryBlue, size: 15), const SizedBox(width: 8), Flexible(child: Text(title, style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis))]),
       ),
     );
   }
@@ -376,7 +500,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isAr ? "يرجى إكمال البيانات" : "Please complete data"), backgroundColor: Colors.redAccent));
           }
         },
-        style: ElevatedButton.styleFrom(backgroundColor: primaryBlue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue, 
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          elevation: 4,
+          shadowColor: Colors.black26,
+        ),
         child: isLoading ? const CircularProgressIndicator(color: Colors.white) : Text(content['saveBtn'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
       ),
     );

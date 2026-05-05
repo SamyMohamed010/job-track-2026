@@ -5,6 +5,8 @@ import 'job_details_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
 import 'applications_screen.dart';
+import '../../../app_localization.dart';
+import '../../widgets/language_toggle.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -73,7 +75,10 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
-  Map<String, String> get texts => {
+  Map<String, String> get texts {
+    bool isAr = appLocalization.locale.languageCode == 'ar';
+    return {
+
     'logout': isArabic ? "خروج" : "Logout",
     'hello': isArabic ? "مرحباً، " : "Hello, ",
     'findNext': isArabic
@@ -104,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ? "أكمل مهاراتك لتتميز."
         : "Complete your skills to stand out.",
   };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,9 +122,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return matchesFilter && matchesSearch;
     }).toList();
 
-    return Directionality(
-      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-      child: Scaffold(
+    return AnimatedBuilder(
+      animation: appLocalization,
+      builder: (context, child) {
+        bool isAr = appLocalization.locale.languageCode == 'ar';
+        return Directionality(
+          textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
+          child: Scaffold(
+
         backgroundColor: grayBg,
         body: SafeArea(
           child: Column(
@@ -188,6 +199,9 @@ class _HomeScreenState extends State<HomeScreen> {
         bottomNavigationBar: _buildBottomNav(),
       ),
     );
+      },
+    );
+
   }
 
   Widget _buildTopHeader() {
@@ -227,10 +241,27 @@ class _HomeScreenState extends State<HomeScreen> {
               // Logout button
               TextButton.icon(
                 onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
+                  final bool isAr = appLocalization.locale.languageCode == 'ar';
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text(isAr ? "تأكيد تسجيل الخروج" : "Confirm Logout", style: TextStyle(color: primaryBlue, fontWeight: FontWeight.bold)),
+                      content: Text(isAr ? "هل أنت متأكد أنك تريد تسجيل الخروج؟" : "Are you sure you want to log out?", style: TextStyle(color: grayText)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(isAr ? "إلغاء" : "Cancel", style: TextStyle(color: primaryBlueLight)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                          },
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade50, elevation: 0),
+                          child: Text(isAr ? "خروج" : "Logout", style: const TextStyle(color: Colors.red)),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -250,16 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               // Language Toggle
-              TextButton(
-                onPressed: () => setState(() => isArabic = !isArabic),
-                child: Text(
-                  isArabic ? "English" : "العربية",
-                  style: TextStyle(
-                    color: primaryBlueLight,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              const LanguageToggle(),
               // Bell (No circle background, just icon)
               GestureDetector(
                 onTap: () => _showNotificationsSheet(context),

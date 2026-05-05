@@ -151,13 +151,23 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        Image.asset(
-          'assets/images/logo image.jpg',
-          height: 120,
-          errorBuilder: (context, error, stackTrace) => const Icon(
-            Icons.business,
-            size: 80,
-            color: Color(0xFF1E3A5F),
+        Container(
+          height: 120, width: 120,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/images/logo image.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.business,
+                size: 80,
+                color: Color(0xFF1E3A5F),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -254,14 +264,15 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
   InputDecoration _inputDecoration(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(icon, color: primaryBlue, size: 20),
+      hintStyle: TextStyle(color: Colors.grey.shade300, fontSize: 12),
+      prefixIcon: Icon(icon, color: primaryBlue, size: 15),
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
     );
   }
 
@@ -272,22 +283,23 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
   ) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(Icons.lock_outline, color: primaryBlue, size: 20),
+      hintStyle: TextStyle(color: Colors.grey.shade300, fontSize: 12),
+      prefixIcon: Icon(Icons.lock_outline, color: primaryBlue, size: 15),
       suffixIcon: IconButton(
         icon: Icon(
           isVisible ? Icons.visibility_off : Icons.visibility,
           color: grayTextColor,
-          size: 20,
+          size: 15,
         ),
         onPressed: onToggle,
       ),
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
     );
   }
 
@@ -314,9 +326,10 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryBlue,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(15),
           ),
-          elevation: 0,
+          elevation: 4,
+          shadowColor: Colors.black26,
         ),
         child: Text(
           texts['btnCreate'] ?? 'Create Account',
