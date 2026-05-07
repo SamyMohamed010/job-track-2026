@@ -9,9 +9,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../../core/student_service.dart';
 import '../../widgets/language_toggle.dart';
+import 'package:http/http.dart' as http;
 import '../../../app_localization.dart';
 import 'home_screen.dart';
 import 'applications_screen.dart';
+import '../../../core/services/database_service.dart';
+import '../../../core/services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -205,21 +208,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _toggleEditMode() {
+  void _toggleEditMode() async {
     if (_isEditMode) {
       // Save data back to service
+      setState(() {
+        _isEditMode = false;
+      });
+
+      String? newProfileImageUrl;
+      if (studentService.profileImageBytes != null) {
+        newProfileImageUrl = await _uploadToCloudinary(
+          studentService.profileImageBytes, 
+          'profile_update_${DateTime.now().millisecondsSinceEpoch}.jpg', 
+          'student_profiles'
+        );
+      }
+
       setState(() {
         studentService.name = _nameController.text;
         studentService.graduationYear = _yearController.text;
         studentService.faculty = _facultyController.text;
         studentService.specialty = _specialtyController.text;
         studentService.program = _programController.text;
-        _isEditMode = false;
+        if (newProfileImageUrl != null) {
+          studentService.profileImageUrl = newProfileImageUrl;
+        }
       });
+
+      final uid = AuthService().currentUid;
+      if (uid != null) {
+        await DatabaseService(uid: uid).updateUserData({
+          'name': studentService.name,
+          'graduationYear': studentService.graduationYear,
+          'faculty': studentService.faculty,
+          'specialty': studentService.specialty,
+          'program': studentService.program,
+          if (newProfileImageUrl != null) 'profileImageUrl': newProfileImageUrl,
+        });
+      }
     } else {
       setState(() {
         _isEditMode = true;
       });
+    }
+  }
+
+  Future<String?> _uploadToCloudinary(Uint8List? bytes, String fileName, String folder) async {
+    if (bytes == null) return null;
+    try {
+      final cloudName = 'dfeptodqc';
+      final uploadPreset = 'nszqbsrs';
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      
+      final request = http.MultipartRequest('POST', uri);
+      request.fields['upload_preset'] = uploadPreset;
+      request.fields['folder'] = folder;
+      
+      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        final json = jsonDecode(responseData);
+        return json['secure_url'];
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
     }
   }
 
@@ -353,7 +409,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 60,
                 backgroundImage: studentService.profileImageBytes != null
                     ? MemoryImage(studentService.profileImageBytes!)
-                    : AssetImage(studentService.profileImage) as ImageProvider,
+                    : (studentService.profileImageUrl != null && studentService.profileImageUrl!.isNotEmpty)
+                        ? NetworkImage(studentService.profileImageUrl!)
+                        : AssetImage(studentService.profileImage) as ImageProvider,
               ),
             ),
             if (_isEditMode)

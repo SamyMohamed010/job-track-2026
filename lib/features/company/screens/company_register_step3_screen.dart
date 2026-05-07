@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
+
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../company_data.dart';
 import '../../../app_localization.dart';
 import '../../../core/services/auth_service.dart';
@@ -30,6 +33,39 @@ class _CompanyRegisterStep3ScreenState
       setState(() {
         _logoImage = pickedFile;
       });
+    }
+  }
+
+  Future<String?> _uploadImage(XFile? file, String folder) async {
+    if (file == null) return null;
+    try {
+      final cloudName = 'dfeptodqc';
+      final uploadPreset = 'nszqbsrs';
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      
+      final request = http.MultipartRequest('POST', uri);
+      request.fields['upload_preset'] = uploadPreset;
+      request.fields['folder'] = folder;
+
+      if (kIsWeb) {
+        final bytes = await file.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: file.name));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath('file', file.path));
+      }
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        final json = jsonDecode(responseData);
+        return json['secure_url'];
+      } else {
+        debugPrint('Cloudinary upload failed: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint("Error uploading to Cloudinary: $e");
+      return null;
     }
   }
 
@@ -138,6 +174,9 @@ class _CompanyRegisterStep3ScreenState
                   });
 
                   try {
+                    String? logoUrl = await _uploadImage(_logoImage, 'company_logos');
+                    String? licenseUrl = await _uploadImage(_licenseImage, 'company_licenses');
+
                     final data = CompanyData();
                     final authService = AuthService();
                     
@@ -149,6 +188,8 @@ class _CompanyRegisterStep3ScreenState
                       'website': data.website,
                       'status': 'pending',
                       'isApproved': false,
+                      'logoUrl': logoUrl ?? '',
+                      'licenseUrl': licenseUrl ?? '',
                     };
 
                     await authService.signUpWithEmailAndPassword(

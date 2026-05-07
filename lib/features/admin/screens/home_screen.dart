@@ -207,13 +207,18 @@ class CompanyListContent extends StatelessWidget {
               final data = doc.data() as Map<String, dynamic>;
               return Company(
                 id: doc.id,
-                name: data['name'] ?? 'Unknown',
+                name: (data['name']?.toString().trim().isNotEmpty == true) ? data['name'] : 'Unknown',
                 email: data['email'] ?? 'No email',
                 brandColor: kPrimaryBlue,
-                logoUrl: "https://img.icons8.com/color/512/business.png",
-                location: data['location'] ?? 'Unknown location',
+                logoUrl: (data['logoUrl']?.toString().trim().isNotEmpty == true) 
+                    ? data['logoUrl'] 
+                    : "https://img.icons8.com/color/512/business.png",
+                location: (data['location']?.toString().trim().isNotEmpty == true) ? data['location'] : 'Unknown location',
                 status: data['status'] ?? 'pending',
                 isApproved: data['isApproved'] ?? false,
+                licenseUrl: data['licenseUrl'] ?? '',
+                description: data['overview'] ?? data['description'] ?? '',
+                website: data['website'] ?? 'www.linkedin.com',
               );
             }).toList() ??
             [];

@@ -123,12 +123,16 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                                   ? Image.network(data.logoImage!.path, fit: BoxFit.cover, width: 80, height: 80)
                                   : Image.file(File(data.logoImage!.path), fit: BoxFit.cover, width: 80, height: 80),
                             )
-                          : Center(
-                              child: Text(
-                                data.name.isNotEmpty ? data.name[0].toUpperCase() : "S", 
-                                style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)
-                              ),
-                            ),
+                          : (data.logoUrl != null && data.logoUrl!.isNotEmpty)
+                              ? ClipOval(
+                                  child: Image.network(data.logoUrl!, fit: BoxFit.cover, width: 80, height: 80),
+                                )
+                              : Center(
+                                  child: Text(
+                                    data.name.isNotEmpty ? data.name[0].toUpperCase() : "S", 
+                                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)
+                                  ),
+                                ),
                     ),
                     const SizedBox(height: 12),
 

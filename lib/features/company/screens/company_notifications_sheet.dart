@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void showCompanyNotifications(BuildContext context) {
   showModalBottomSheet(
@@ -33,25 +35,41 @@ void showCompanyNotifications(BuildContext context) {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView(
-                children: [
-                  _buildNotificationItem(
-                    context,
-                    title: "New Job Application",
-                    message: "Ahmed Ali has applied for the Software Engineer position.",
-                    time: "Just now",
-                    icon: Icons.person_add,
-                    color: Colors.blue,
-                  ),
-                  _buildNotificationItem(
-                    context,
-                    title: "Application Received",
-                    message: "Sara Khalid applied for Graphic Designer.",
-                    time: "2 hours ago",
-                    icon: Icons.person_add,
-                    color: Colors.blue,
-                  ),
-                ],
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('notifications')
+                    .where('targetId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        "No notifications",
+                        style: TextStyle(color: Color(0xFF7E848E)),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      var doc = snapshot.data!.docs[index];
+                      var data = doc.data() as Map<String, dynamic>;
+                      return _buildNotificationItem(
+                        context,
+                        title: data['title'] ?? 'Notification',
+                        message: data['message'] ?? '',
+                        time: "", // You can format the timestamp if needed
+                        icon: Icons.person_add,
+                        color: Colors.blue,
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],

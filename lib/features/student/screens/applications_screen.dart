@@ -89,7 +89,18 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
             children: [
               Text("${AppLocale.tr(context, 'Applied on ')}${AppLocale.tr(context, app['date'])}", style: const TextStyle(color: Color(0xFF7E848E), fontSize: 12)),
               ElevatedButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => JobDetailsScreen(title: AppLocale.tr(context, app['title']), company: AppLocale.tr(context, app['company']), location: "Remote"))),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => JobDetailsScreen(
+                  jobId: 'dummy_id',
+                  companyId: 'dummy_company',
+                  title: AppLocale.tr(context, app['title']), 
+                  company: AppLocale.tr(context, app['company']), 
+                  location: "Remote",
+                  description: "Dummy description",
+                  requirements: "Dummy requirement",
+                  jobType: "Full-time",
+                  salaryFrom: "0",
+                  salaryTo: "0",
+                ))),
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF229BD8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                 child: Text(AppLocale.tr(context, "View Job"), style: const TextStyle(color: Colors.white, fontSize: 12)),
               ),

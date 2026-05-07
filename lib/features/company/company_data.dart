@@ -39,6 +39,8 @@ class CompanyData {
   
   XFile? logoImage;
   XFile? licenseImage;
+  String? logoUrl;
+  String? licenseUrl;
   
   List<JobModel> jobs = [];
 }

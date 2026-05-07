@@ -33,13 +33,13 @@ class JobsScreen extends StatelessWidget {
               return Job(
                 id: doc.id,
                 companyId: data['companyId'] ?? '',
-                position: data['title'] ?? 'No title',
-                companyName: data['companyName'] ?? 'Unknown Company',
-                location: data['location'] ?? 'Unknown location',
+                position: (data['title']?.toString().trim().isNotEmpty == true) ? data['title'] : 'No title',
+                companyName: (data['companyName']?.toString().trim().isNotEmpty == true) ? data['companyName'] : 'Unknown Company',
+                location: (data['location']?.toString().trim().isNotEmpty == true) ? data['location'] : 'Unknown location',
                 salary: salary,
-                logoUrl:
-                    data['logoUrl'] ??
-                    'https://img.icons8.com/color/512/business.png',
+                logoUrl: (data['logoUrl']?.toString().trim().isNotEmpty == true)
+                    ? data['logoUrl']
+                    : 'https://img.icons8.com/color/512/business.png',
                 status: data['status'] ?? 'pending',
               );
             }).toList() ??

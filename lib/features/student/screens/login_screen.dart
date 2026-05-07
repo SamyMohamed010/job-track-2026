@@ -10,6 +10,7 @@ import '../../admin/screens/home_screen.dart' as admin;
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/student_service.dart';
+import '../../company/company_data.dart';
 
 // لازم يكون مكتوب extends StatefulWidget أو StatelessWidget
 // لازم يكون مكتوب extends StatefulWidget أو StatelessWidget
@@ -323,6 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               studentService.graduationYear =
                                   data['graduationYear'] ?? '';
                               studentService.program = data['program'];
+                              studentService.profileImageUrl = data['profileImageUrl'];
 
                               if (data['skills'] != null) {
                                 studentService.skills = List<String>.from(
@@ -343,6 +345,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               }
                             } else if (data['role'] == 'company') {
+                              CompanyData().name = data['name'] ?? '';
+                              CompanyData().industry = data['industry'] ?? '';
+                              CompanyData().overview = data['overview'] ?? '';
+                              CompanyData().location = data['location'] ?? '';
+                              CompanyData().website = data['website'] ?? '';
+                              CompanyData().email = data['email'] ?? email;
+                              CompanyData().logoUrl = data['logoUrl'];
+                              CompanyData().licenseUrl = data['licenseUrl'];
+
                               if (data['isApproved'] == true ||
                                   data['status'] == 'approved') {
                                 if (mounted) {

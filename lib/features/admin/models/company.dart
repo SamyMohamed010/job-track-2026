@@ -7,6 +7,9 @@ class Company {
   final String logoUrl;
   final String location;
   final String status;
+  final String licenseUrl;
+  final String description;
+  final String website;
   bool isApproved;
   String? id;
 
@@ -18,6 +21,9 @@ class Company {
     required this.location,
     this.status = 'pending',
     this.isApproved = false,
+    this.licenseUrl = '',
+    this.description = '',
+    this.website = '',
     this.id,
   });
 }

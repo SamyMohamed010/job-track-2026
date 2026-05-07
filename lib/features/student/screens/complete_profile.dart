@@ -8,7 +8,8 @@ import '../../../core/student_service.dart';
 import '../../../app_localization.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/database_service.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 class CompleteProfileScreen extends StatefulWidget {
   final String userName;
   const CompleteProfileScreen({super.key, this.userName = "Student"});
@@ -90,6 +91,34 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   String? selectedProgram;
   String? verificationFileName;
   Uint8List? verificationFileData;
+
+  Future<String?> _uploadToCloudinary(Uint8List? bytes, String fileName, String folder) async {
+    if (bytes == null) return null;
+    try {
+      final cloudName = 'dfeptodqc';
+      final uploadPreset = 'nszqbsrs';
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      
+      final request = http.MultipartRequest('POST', uri);
+      request.fields['upload_preset'] = uploadPreset;
+      request.fields['folder'] = folder;
+      
+      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        final json = jsonDecode(responseData);
+        return json['secure_url'];
+      } else {
+        debugPrint('Cloudinary upload failed: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint("Error uploading to Cloudinary: $e");
+      return null;
+    }
+  }
 
   Future<void> _pickVerification() async {
     bool isAr = appLocalization.locale.languageCode == 'ar';
@@ -788,6 +817,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   try {
                     final uid = AuthService().currentUid;
                     if (uid != null) {
+                      String? profileImageUrl;
+                      if (profileImageBytes != null && profileImageName != null) {
+                        profileImageUrl = await _uploadToCloudinary(profileImageBytes, profileImageName!, 'student_profiles');
+                        studentService.profileImageUrl = profileImageUrl;
+                      }
+
                       await DatabaseService(uid: uid).updateUserData({
                         'faculty': selectedFaculty,
                         'specialty': selectedMajor ?? "",
@@ -795,6 +830,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         'program': selectedProgram,
                         'skills': skills,
                         'studyStatus': studyStatus,
+                        if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
                       });
                     }
                     if (mounted)

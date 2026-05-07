@@ -1,24 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. الكروت العلوية (Total, Approved, Rejected)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'company').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+        final total = docs.length;
+        final approved = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['isApproved'] == true || data['status'] == 'approved';
+        }).length;
+        final rejected = docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['status'] == 'rejected';
+        }).length;
+
+        final percent = total > 0 ? (approved / total * 100).toInt() : 0;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTopStatCard("Total Applicants", "120"),
-              _buildTopStatCard("Approved", "80"),
-              _buildTopStatCard("Rejected", "40"),
-            ],
-          ),
+              // 1. الكروت العلوية (Total, Approved, Rejected)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildTopStatCard("Total Companies", total.toString()),
+                  _buildTopStatCard("Approved", approved.toString()),
+                  _buildTopStatCard("Rejected", rejected.toString()),
+                ],
+              ),
           const SizedBox(height: 30),
 
           // 2. قسم Application Status
@@ -45,8 +66,8 @@ class AnalyticsScreen extends StatelessWidget {
                       ),
                       child: const Center(
                         child: Text(
-                          "66%",
-                          style: TextStyle(
+                          "\$percent%",
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -91,6 +112,8 @@ class AnalyticsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+      },
     );
   }
 

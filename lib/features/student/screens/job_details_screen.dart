@@ -4,17 +4,32 @@ import 'company_profile_screen.dart';
 import '../../localization.dart';
 import '../../widgets/language_toggle.dart';
 import 'company_profile_screen.dart'; 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 class JobDetailsScreen extends StatefulWidget {
-  // تعريف المتغيرات في الـ Widget لتكون قابلة للاستخدام في الـ State
+  final String jobId;
+  final String companyId;
   final String title;
   final String company;
   final String location;
+  final String description;
+  final String requirements;
+  final String jobType;
+  final String salaryFrom;
+  final String salaryTo;
 
   const JobDetailsScreen({
     super.key, 
+    required this.jobId,
+    required this.companyId,
     required this.title, 
     required this.company, 
     required this.location,
+    required this.description,
+    required this.requirements,
+    required this.jobType,
+    required this.salaryFrom,
+    required this.salaryTo,
   });
 
   @override
@@ -92,8 +107,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               alignment: WrapAlignment.center,
               children: [
                 _buildInfoChip(Icons.location_on, widget.location, Colors.red),
-                _buildInfoChip(Icons.monetization_on, "5k - 7k EGP", Colors.green),
-                _buildInfoChip(Icons.work, "Hybrid", Colors.blue),
+                _buildInfoChip(Icons.monetization_on, "\${widget.salaryFrom} - \${widget.salaryTo}", Colors.green),
+                _buildInfoChip(Icons.work, widget.jobType, Colors.blue),
               ],
             ),
             
@@ -104,7 +119,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppLocale.tr(context, "We are looking for a creative developer to join our team in Cairo. This role involves designing and implementing high-quality user interfaces."),
+                  widget.description.isNotEmpty ? widget.description : AppLocale.tr(context, "No description provided."),
                   maxLines: _isDescriptionExpanded ? 10 : 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.black54, height: 1.5),
@@ -128,9 +143,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 tilePadding: EdgeInsets.zero,
                 iconColor: const Color(0xFF1B4B82),
                 children: [
-                  _buildReqItem(AppLocale.tr(context, "Bachelor's degree in Computer Science.")),
-                  _buildReqItem(AppLocale.tr(context, "Strong experience with Flutter and Dart.")),
-                  _buildReqItem(AppLocale.tr(context, "Professional English language.")),
+                  ...widget.requirements.split('\\n').where((req) => req.trim().isNotEmpty).map((req) => _buildReqItem(AppLocale.tr(context, req))),
                 ],
               ),
             ),
@@ -138,10 +151,38 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             const SizedBox(height: 40),
             // زر التقديم (يتغير عند الضغط)
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (studentService.isVerified) {
                   setState(() => _isApplied = true);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocale.tr(context, "Applied Successfully!"))));
+                  
+                  try {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      await FirebaseFirestore.instance.collection('applications').add({
+                        'jobId': widget.jobId,
+                        'companyId': widget.companyId,
+                        'studentId': user.uid,
+                        'jobTitle': widget.title,
+                        'companyName': widget.company,
+                        'status': 'Pending',
+                        'appliedAt': FieldValue.serverTimestamp(),
+                      });
+                      
+                      await FirebaseFirestore.instance.collection('notifications').add({
+                        'targetId': widget.companyId,
+                        'targetType': 'company',
+                        'title': 'New Application',
+                        'message': 'A student has applied for \${widget.title}',
+                        'type': 'application',
+                        'createdAt': FieldValue.serverTimestamp(),
+                        'isRead': false,
+                      });
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocale.tr(context, "Applied Successfully!"))));
+                  } catch (e) {
+                    setState(() => _isApplied = false);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error applying: \$e")));
+                  }
                 } else {
                   _showVerificationDialog(context);
                 }

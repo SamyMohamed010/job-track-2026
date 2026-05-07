@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/student_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'job_details_screen.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
@@ -18,18 +19,30 @@ class HomeScreen extends StatefulWidget {
 }
 
 class Job {
+  final String id;
+  final String companyId;
   final String title;
   final String company;
   final String location;
   final String type; // 'Internship', 'Part-time', 'Full-time'
   final String logoPath;
+  final String description;
+  final String requirements;
+  final String salaryFrom;
+  final String salaryTo;
 
   Job({
+    required this.id,
+    required this.companyId,
     required this.title,
     required this.company,
     required this.location,
     required this.type,
     required this.logoPath,
+    required this.description,
+    required this.requirements,
+    required this.salaryFrom,
+    required this.salaryTo,
   });
 }
 
@@ -121,6 +134,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             snapshot.data?.docs.map((doc) {
                               final data = doc.data() as Map<String, dynamic>;
                               return Job(
+                                id: doc.id,
+                                companyId: data['companyId'] ?? '',
                                 title: data['title'] ?? 'Unknown Title',
                                 company:
                                     data['companyName'] ?? 'Unknown Company',
@@ -129,6 +144,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 type: data['jobType'] ?? 'Full-time',
                                 logoPath:
                                     'assets/images/logo image.jpg', // Placeholder for now
+                                description: data['description'] ?? '',
+                                requirements: data['requirements'] ?? '',
+                                salaryFrom: data['salaryFrom'] ?? '',
+                                salaryTo: data['salaryTo'] ?? '',
                               );
                             }).toList() ??
                             [];
@@ -391,27 +410,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 20),
                 Expanded(
-                  child: ListView(
-                    children: [
-                      _buildNotificationItem(
-                        title: texts['appUpdated']!,
-                        subtitle: texts['appUpdatedDesc']!,
-                        icon: Icons.remove_red_eye,
-                        time: "2h",
-                      ),
-                      _buildNotificationItem(
-                        title: texts['newJob']!,
-                        subtitle: texts['newJobDesc']!,
-                        icon: Icons.work_outline,
-                        time: "5h",
-                      ),
-                      _buildNotificationItem(
-                        title: texts['profileTip']!,
-                        subtitle: texts['profileTipDesc']!,
-                        icon: Icons.lightbulb_outline,
-                        time: "1d",
-                      ),
-                    ],
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('notifications')
+                        .where('targetId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                        .orderBy('createdAt', descending: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return Center(
+                          child: Text(
+                            isArabic ? "لا توجد إشعارات" : "No notifications",
+                            style: TextStyle(color: grayText),
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        itemCount: snapshot.data!.docs.length,
+                        itemBuilder: (context, index) {
+                          var doc = snapshot.data!.docs[index];
+                          var data = doc.data() as Map<String, dynamic>;
+                          return _buildNotificationItem(
+                            title: data['title'] ?? 'Notification',
+                            subtitle: data['message'] ?? '',
+                            icon: Icons.notifications,
+                            time: "", // You can parse timestamp if needed
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -607,9 +638,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => JobDetailsScreen(
+                                  jobId: job.id,
+                                  companyId: job.companyId,
                                   title: job.title,
                                   company: job.company,
                                   location: job.location,
+                                  description: job.description,
+                                  requirements: job.requirements,
+                                  jobType: job.type,
+                                  salaryFrom: job.salaryFrom,
+                                  salaryTo: job.salaryTo,
                                 ),
                               ),
                             );

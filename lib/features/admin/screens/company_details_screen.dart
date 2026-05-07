@@ -85,7 +85,9 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "A leading manufacturer and distributor of high-quality pharmaceutical products, dedicated to improving public health through innovative healthcare solutions. This company strives to provide excellence in every product.",
+                    widget.company.description.isNotEmpty 
+                        ? widget.company.description 
+                        : "No description provided by the company.",
                     maxLines: _isExpanded ? 100 : 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: Colors.grey[700], height: 1.5),
@@ -114,7 +116,7 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
               title: "Contact Info.",
               content: Column(
                 children: [
-                  _buildContactItem(Icons.language, "www.linkedin.com"),
+                  _buildContactItem(Icons.language, widget.company.website.isNotEmpty ? widget.company.website : "www.linkedin.com"),
                   const Divider(),
                   _buildContactItem(Icons.email_outlined, widget.company.email),
                 ],
@@ -348,8 +350,15 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
     return Column(
       children: [
         GestureDetector(
-          onTap: () =>
-              _openUrl("https://www.google.com"), // حط لينك ملف الرخصة هنا
+          onTap: () {
+            if (widget.company.licenseUrl.isNotEmpty) {
+              _openUrl(widget.company.licenseUrl);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("No license document available.")),
+              );
+            }
+          },
           child: Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(

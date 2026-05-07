@@ -25,6 +25,7 @@ class StudentService {
   Uint8List? cvFileData;
   String profileImage = "assets/images/pro.jpg";
   Uint8List? profileImageBytes;
+  String? profileImageUrl;
   String about =
       "Passionate Computer Science student with a focus on Flutter development. Eager to learn and contribute to innovative projects.";
 
