@@ -1,6 +1,7 @@
 import 'package:image_picker/image_picker.dart';
 
 class JobModel {
+  final String? id;
   final String title;
   final String description;
   final String requirements;
@@ -12,6 +13,7 @@ class JobModel {
   final String deadline;
 
   JobModel({
+    this.id,
     required this.title,
     required this.description,
     required this.requirements,

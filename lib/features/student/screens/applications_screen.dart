@@ -1,10 +1,16 @@
+import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'job_details_screen.dart';
 import '../../../app_localization.dart';
 import '../../localization.dart';
 import '../../../widgets/student_app_bar.dart';
-import 'profile_screen.dart';
+// import 'profile_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+
+
 class ApplicationsScreen extends StatefulWidget {
   const ApplicationsScreen({super.key});
   @override
@@ -13,15 +19,23 @@ class ApplicationsScreen extends StatefulWidget {
 
 class _ApplicationsScreenState extends State<ApplicationsScreen> {
   String selectedFilter = "All";
-  final List<Map<String, dynamic>> apps = [
-    {"title": "Frontend Developer", "company": "Google", "status": "Accepted", "color": Colors.green, "date": "April 20, 2024"},
-    {"title": "UI/UX Design Intern", "company": "Amazon", "status": "Pending", "color": Colors.orange, "date": "April 18, 2024"},
-    {"title": "Lab Assistant", "company": "Medical Lab", "status": "Rejected", "color": Colors.red, "date": "April 10, 2024"},
-  ];
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Accepted':
+        return Colors.green;
+      case 'Rejected':
+        return Colors.red;
+      case 'Pending':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    var filteredApps = selectedFilter == "All" ? apps : apps.where((a) => a['status'] == selectedFilter).toList();
+    final user = FirebaseAuth.instance.currentUser;
 
     return AnimatedBuilder(
       animation: appLocalization,
@@ -44,8 +58,22 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                       onPressed: () => setState(() => selectedFilter = f),
                       child: Column(
                         children: [
-                          Text(AppLocale.tr(context, f), style: TextStyle(color: isS ? const Color(0xFF229BD8) : const Color(0xFF7E848E), fontSize: 14, fontWeight: FontWeight.bold)),
-                          if (isS) Container(height: 2, width: 20, color: const Color(0xFF229BD8)),
+                          Text(
+                            AppLocale.tr(context, f),
+                            style: TextStyle(
+                              color: isS
+                                  ? const Color(0xFF229BD8)
+                                  : const Color(0xFF7E848E),
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (isS)
+                            Container(
+                              height: 2,
+                              width: 20,
+                              color: const Color(0xFF229BD8),
+                            ),
                         ],
                       ),
                     );
@@ -53,10 +81,48 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(15),
-                  itemCount: filteredApps.length,
-                  itemBuilder: (context, i) => _buildCard(filteredApps[i]),
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('applications')
+                      .where('studentId', isEqualTo: user?.uid)
+                      .orderBy('appliedAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Center(
+                        child: Text(
+                          AppLocale.tr(context, "No applications found"),
+                        ),
+                      );
+                    }
+
+                    var docs = snapshot.data!.docs;
+                    if (selectedFilter != "All") {
+                      docs = docs
+                          .where((d) => d['status'] == selectedFilter)
+                          .toList();
+                    }
+
+                    if (docs.isEmpty) {
+                      return Center(
+                        child: Text(
+                          AppLocale.tr(context, "No applications found"),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(15),
+                      itemCount: docs.length,
+                      itemBuilder: (context, i) {
+                        var data = docs[i].data() as Map<String, dynamic>;
+                        return _buildCard(data);
+                      },
+                    );
+                  },
                 ),
               ),
             ],
@@ -67,42 +133,124 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
     );
   }
 
-  Widget _buildCard(Map app) {
+  Widget _buildCard(Map<String, dynamic> app) {
+    final status = app['status'] ?? 'Pending';
+    final color = _getStatusColor(status);
+    final date = app['appliedAt'] != null
+        ? DateFormat(
+            'MMMM dd, yyyy',
+          ).format((app['appliedAt'] as Timestamp).toDate())
+        : 'N/A';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
       width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))]),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Row(
             children: [
-              const CircleAvatar(backgroundColor: Color(0xFFEBEEF4), child: Icon(Icons.business, color: Color(0xFF229BD8))),
+              const CircleAvatar(
+                backgroundColor: Color(0xFFEBEEF4),
+                child: Icon(Icons.business, color: Color(0xFF229BD8)),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(AppLocale.tr(context, app['title']), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), Text(AppLocale.tr(context, app['company']), style: const TextStyle(color: Color(0xFF7E848E), fontSize: 12))])),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: app['color'].withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text(AppLocale.tr(context, app['status']), style: TextStyle(color: app['color'], fontWeight: FontWeight.bold, fontSize: 11))),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppLocale.tr(context, app['jobTitle'] ?? 'Job'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      AppLocale.tr(context, app['companyName'] ?? 'Company'),
+                      style: const TextStyle(
+                        color: Color(0xFF7E848E),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  AppLocale.tr(context, status),
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
             ],
           ),
           const Divider(height: 25),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("${AppLocale.tr(context, 'Applied on ')}${AppLocale.tr(context, app['date'])}", style: const TextStyle(color: Color(0xFF7E848E), fontSize: 12)),
+              Text(
+                "${AppLocale.tr(context, 'Applied on ')}${AppLocale.tr(context, date)}",
+                style: const TextStyle(color: Color(0xFF7E848E), fontSize: 12),
+              ),
               ElevatedButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => JobDetailsScreen(
-                  jobId: 'dummy_id',
-                  companyId: 'dummy_company',
-                  title: AppLocale.tr(context, app['title']), 
-                  company: AppLocale.tr(context, app['company']), 
-                  location: "Remote",
-                  description: "Dummy description",
-                  requirements: "Dummy requirement",
-                  jobType: "Full-time",
-                  salaryFrom: "0",
-                  salaryTo: "0",
-                ))),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF229BD8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
-                child: Text(AppLocale.tr(context, "View Job"), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                onPressed: () async {
+                  // Fetch job details to pass to screen
+                  final jobDoc = await FirebaseFirestore.instance
+                      .collection('jobs')
+                      .doc(app['jobId'])
+                      .get();
+                  if (jobDoc.exists && mounted) {
+                    final jobData = jobDoc.data()!;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (c) => JobDetailsScreen(
+                          jobId: app['jobId'],
+                          companyId: app['companyId'],
+                          title: jobData['title'] ?? '',
+                          company: jobData['companyName'] ?? '',
+                          logoUrl: jobData['companyLogoUrl'] ?? '',
+                          location: jobData['location'] ?? '',
+                          description: jobData['description'] ?? '',
+                          requirements: jobData['requirements'] ?? '',
+                          jobType: jobData['jobType'] ?? '',
+                          salaryFrom: jobData['salaryFrom'] ?? '',
+                          salaryTo: jobData['salaryTo'] ?? '',
+                        ),
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF229BD8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                child: Text(
+                  AppLocale.tr(context, "View Job"),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
               ),
             ],
           ),
@@ -110,6 +258,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
       ),
     );
   }
+
   void _showNotificationsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -126,7 +275,11 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
             children: [
               Text(
                 AppLocale.tr(context, "Notifications"),
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F)),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E3A5F),
+                ),
               ),
               const SizedBox(height: 20),
               Expanded(
@@ -135,14 +288,20 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                     _buildNotificationItem(
                       context,
                       title: AppLocale.tr(context, "Application Accepted"),
-                      subtitle: AppLocale.tr(context, "Your application for Google has been accepted."),
+                      subtitle: AppLocale.tr(
+                        context,
+                        "Your application for Google has been accepted.",
+                      ),
                       icon: Icons.remove_red_eye,
                       time: "2h",
                     ),
                     _buildNotificationItem(
                       context,
                       title: AppLocale.tr(context, "New Job Alert"),
-                      subtitle: AppLocale.tr(context, "A new 'Flutter Developer' job was posted."),
+                      subtitle: AppLocale.tr(
+                        context,
+                        "A new 'Flutter Developer' job was posted.",
+                      ),
                       icon: Icons.work_outline,
                       time: "5h",
                     ),
@@ -156,7 +315,8 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
     );
   }
 
-  Widget _buildNotificationItem(BuildContext context, {
+  Widget _buildNotificationItem(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required IconData icon,
@@ -173,21 +333,47 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: const Icon(Icons.notifications, color: Color(0xFF229BD8), size: 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications,
+              color: Color(0xFF229BD8),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F))),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E3A5F),
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: Color(0xFF7E848E), fontSize: 12)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Color(0xFF7E848E),
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
-          Text(time, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w500)),
+          Text(
+            time,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -198,23 +384,32 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
       ),
       child: ClipRRect(
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
         child: Directionality(
-          textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
+          textDirection: isAr ? ui.TextDirection.rtl : ui.TextDirection.ltr,
           child: BottomNavigationBar(
             currentIndex: 0,
             onTap: (index) {
               if (index == 1) {
-                Navigator.pop(context); // Go back to Home
+                Navigator.pushReplacementNamed(context, '/student_home');
               } else if (index == 2) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                );
+                Navigator.pushReplacementNamed(context, '/student_profile');
               }
             },
             backgroundColor: Colors.white,
@@ -222,19 +417,34 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
             unselectedItemColor: const Color(0xFF1E3A5F).withOpacity(0.5),
             showSelectedLabels: true,
             showUnselectedLabels: true,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
             items: [
               BottomNavigationBarItem(
-                icon: const Padding(padding: EdgeInsets.only(bottom: 5.0), child: Icon(CupertinoIcons.doc_text)),
+                icon: const Padding(
+                  padding: EdgeInsets.only(bottom: 5.0),
+                  child: Icon(CupertinoIcons.doc_text),
+                ),
                 label: AppLocale.tr(context, isAr ? "الطلبات" : "Applications"),
               ),
               BottomNavigationBarItem(
-                icon: const Padding(padding: EdgeInsets.only(bottom: 5.0), child: Icon(CupertinoIcons.home)),
+                icon: const Padding(
+                  padding: EdgeInsets.only(bottom: 5.0),
+                  child: Icon(CupertinoIcons.home),
+                ),
                 label: AppLocale.tr(context, isAr ? "الرئيسية" : "Home"),
               ),
               BottomNavigationBarItem(
-                icon: const Padding(padding: EdgeInsets.only(bottom: 5.0), child: Icon(CupertinoIcons.person)),
+                icon: const Padding(
+                  padding: EdgeInsets.only(bottom: 5.0),
+                  child: Icon(CupertinoIcons.person),
+                ),
                 label: AppLocale.tr(context, isAr ? "الملف الشخصي" : "Profile"),
               ),
             ],

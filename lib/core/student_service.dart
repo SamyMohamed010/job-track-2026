@@ -32,7 +32,7 @@ class StudentService {
   // Verification Document
   String? verificationFileName;
   Uint8List? verificationFileData;
-  bool get isVerified => verificationFileData != null;
+  bool get isVerified => verificationFileData != null && cvFileData != null;
 }
 
 final studentService = StudentService();

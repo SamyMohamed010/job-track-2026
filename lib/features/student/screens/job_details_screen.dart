@@ -11,6 +11,7 @@ class JobDetailsScreen extends StatefulWidget {
   final String companyId;
   final String title;
   final String company;
+  final String logoUrl;
   final String location;
   final String description;
   final String requirements;
@@ -24,6 +25,7 @@ class JobDetailsScreen extends StatefulWidget {
     required this.companyId,
     required this.title, 
     required this.company, 
+    required this.logoUrl,
     required this.location,
     required this.description,
     required this.requirements,
@@ -48,22 +50,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leadingWidth: 110,
-        leading: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFFDA00C), size: 20),
-              onPressed: () => Navigator.pop(context),
-            ),
-            // لوجو التطبيق الصغير - تأكدي من وجوده في المسار المذكور
-            Image.asset(
-              'assets/images/logo.jpg', 
-              height: 32, 
-              width: 32,
-              color: const Color(0xFFEBEEF4),
-              colorBlendMode: BlendMode.multiply,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.circle, size: 32, color: Colors.grey),
-            ),
-          ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFFDA00C), size: 20),
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           const LanguageToggle(),
@@ -89,11 +78,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
-                child: Image.asset(
-                  'assets/images/google.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, size: 50, color: Color(0xFF1B4B82)),
-                ),
+                child: widget.logoUrl.isNotEmpty
+                  ? Image.network(
+                      widget.logoUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.business, size: 50, color: Color(0xFF1B4B82)),
+                    )
+                  : const Icon(Icons.business, size: 50, color: Color(0xFF1B4B82)),
               ),
             ),
             const SizedBox(height: 15),

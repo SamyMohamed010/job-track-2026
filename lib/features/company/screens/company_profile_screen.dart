@@ -6,6 +6,8 @@ import 'company_edit_profile_screen.dart';
 import 'company_job_applicants_screen.dart';
 import 'company_edit_job_screen.dart';
 import 'company_notifications_sheet.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CompanyProfileScreen extends StatefulWidget {
   const CompanyProfileScreen({super.key});
@@ -22,6 +24,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final data = CompanyData();
+    final user = FirebaseAuth.instance.currentUser;
     
     return Scaffold(
       backgroundColor: const Color(0xFFEBEEF4),
@@ -256,39 +259,60 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
 
                     // Divider
                     const Divider(color: Colors.grey, thickness: 0.5),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
 
-                    // Jobs List or Empty State
-                    if (data.jobs.isEmpty) ...[
-                      const Icon(
-                        Icons.work_outline,
-                        size: 60,
-                        color: Color(0xFFB0B5BD),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "No jobs yet",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF7E848E),
-                        ),
-                      ),
-                    ] else ...[
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Posted Jobs",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ...data.jobs.map((job) => buildJobCard(job)),
-                    ],
+                    // Jobs List from Firestore
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('jobs')
+                          .where('companyId', isEqualTo: user?.uid)
+                          .orderBy('createdAt', descending: true)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return Column(
+                            children: const [
+                              Icon(Icons.work_outline, size: 60, color: Color(0xFFB0B5BD)),
+                              SizedBox(height: 12),
+                              Text("No jobs yet", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF7E848E))),
+                            ],
+                          );
+                        }
+
+                        final jobs = snapshot.data!.docs;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Posted Jobs",
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                            ),
+                            const SizedBox(height: 16),
+                            ...jobs.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final job = JobModel(
+                                id: doc.id,
+                                title: data['title'] ?? '',
+                                description: data['description'] ?? '',
+                                requirements: data['requirements'] ?? '',
+                                location: data['location'] ?? '',
+                                locationType: data['locationType'] ?? '',
+                                jobType: data['jobType'] ?? '',
+                                salaryFrom: data['salaryFrom'] ?? '',
+                                salaryTo: data['salaryTo'] ?? '',
+                                deadline: data['deadline'] ?? '',
+                              );
+                              return buildJobCard(job);
+                            }),
+                          ],
+                        );
+                      },
+                    ),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -469,7 +493,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CompanyJobApplicantsScreen(jobTitle: job.title),
+                      builder: (context) => CompanyJobApplicantsScreen(jobId: job.id ?? '', jobTitle: job.title),
                     ),
                   );
                 },

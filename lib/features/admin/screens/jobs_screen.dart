@@ -37,9 +37,11 @@ class JobsScreen extends StatelessWidget {
                 companyName: (data['companyName']?.toString().trim().isNotEmpty == true) ? data['companyName'] : 'Unknown Company',
                 location: (data['location']?.toString().trim().isNotEmpty == true) ? data['location'] : 'Unknown location',
                 salary: salary,
-                logoUrl: (data['logoUrl']?.toString().trim().isNotEmpty == true)
-                    ? data['logoUrl']
-                    : 'https://img.icons8.com/color/512/business.png',
+                logoUrl: (data['companyLogoUrl']?.toString().trim().isNotEmpty == true)
+                    ? data['companyLogoUrl']
+                    : (data['logoUrl']?.toString().trim().isNotEmpty == true) 
+                        ? data['logoUrl']
+                        : 'https://img.icons8.com/color/512/business.png',
                 status: data['status'] ?? 'pending',
               );
             }).toList() ??

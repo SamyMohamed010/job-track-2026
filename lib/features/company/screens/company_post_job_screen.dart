@@ -207,13 +207,16 @@ class _CompanyPostJobScreenState extends State<CompanyPostJobScreen> {
                           if (user != null) {
                             FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((doc) {
                               String companyName = 'Unknown Company';
+                              String logoUrl = '';
                               if (doc.exists) {
                                 companyName = doc.data()?['name'] ?? 'Unknown Company';
+                                logoUrl = doc.data()?['logoUrl'] ?? '';
                               }
 
                               FirebaseFirestore.instance.collection('jobs').add({
                                 'companyId': user.uid,
                                 'companyName': companyName,
+                                'companyLogoUrl': logoUrl,
                                 'title': _titleController.text,
                                 'description': _descriptionController.text,
                                 'requirements': _requirementsController.text,

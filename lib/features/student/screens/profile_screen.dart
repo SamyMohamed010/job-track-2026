@@ -11,7 +11,7 @@ import '../../../core/student_service.dart';
 import '../../widgets/language_toggle.dart';
 import 'package:http/http.dart' as http;
 import '../../../app_localization.dart';
-import 'home_screen.dart';
+// import 'home_screen.dart';
 import 'applications_screen.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/services/auth_service.dart';
@@ -40,10 +40,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: studentService.name);
-    _yearController = TextEditingController(text: studentService.graduationYear);
+    _yearController = TextEditingController(
+      text: studentService.graduationYear,
+    );
     _facultyController = TextEditingController(text: studentService.faculty);
-    _specialtyController = TextEditingController(text: studentService.specialty);
-    _programController = TextEditingController(text: studentService.program ?? "");
+    _specialtyController = TextEditingController(
+      text: studentService.specialty,
+    );
+    _programController = TextEditingController(
+      text: studentService.program ?? "",
+    );
   }
 
   @override
@@ -71,12 +77,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           studentService.cvFileData = result.files.single.bytes;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("File selected: ${studentService.cvFileName}")),
+          SnackBar(
+            content: Text("File selected: ${studentService.cvFileName}"),
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to pick file"), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text("Failed to pick file"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -86,7 +97,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (studentService.cvFileData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isAr ? "لم يتم رفع سيرة ذاتية بعد" : "No CV uploaded yet"),
+          content: Text(
+            isAr ? "لم يتم رفع سيرة ذاتية بعد" : "No CV uploaded yet",
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -97,9 +110,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (kIsWeb) {
         final String base64Content = base64Encode(studentService.cvFileData!);
         final String fileName = studentService.cvFileName ?? "cv.pdf";
-        final String mimeType = fileName.endsWith(".pdf") ? "application/pdf" : "application/msword";
+        final String mimeType = fileName.endsWith(".pdf")
+            ? "application/pdf"
+            : "application/msword";
         final String dataUri = 'data:$mimeType;base64,$base64Content';
-        
+
         final Uri uri = Uri.parse(dataUri);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri);
@@ -112,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final fileName = studentService.cvFileName ?? "cv.pdf";
         final file = File('${tempDir.path}/$fileName');
         await file.writeAsBytes(studentService.cvFileData!);
-        
+
         final result = await OpenFilex.open(file.path);
         if (result.type != ResultType.done) {
           _showCVPreviewDialog();
@@ -141,12 +156,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             const Icon(Icons.picture_as_pdf, size: 60, color: Colors.redAccent),
             const SizedBox(height: 15),
-            Text(studentService.cvFileName ?? "CV", style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              studentService.cvFileName ?? "CV",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             Text(
-              isAr 
-                ? "تم العثور على ملف السيرة الذاتية. في النسخة التجريبية، يمكنك رؤية اسم الملف وتفاصيله." 
-                : "CV file found. In this preview, you can see the file name and details.",
+              isAr
+                  ? "تم العثور على ملف السيرة الذاتية. في النسخة التجريبية، يمكنك رؤية اسم الملف وتفاصيله."
+                  : "CV file found. In this preview, you can see the file name and details.",
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
@@ -155,7 +173,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(isAr ? "إغلاق" : "Close", style: TextStyle(color: primaryBlue)),
+            child: Text(
+              isAr ? "إغلاق" : "Close",
+              style: TextStyle(color: primaryBlue),
+            ),
           ),
         ],
       ),
@@ -173,13 +194,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           studentService.profileImageBytes = result.files.single.bytes;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile image updated!")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Profile image updated!")));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to pick image"), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text("Failed to pick image"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -203,7 +227,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to pick file"), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text("Failed to pick file"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -218,9 +245,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       String? newProfileImageUrl;
       if (studentService.profileImageBytes != null) {
         newProfileImageUrl = await _uploadToCloudinary(
-          studentService.profileImageBytes, 
-          'profile_update_${DateTime.now().millisecondsSinceEpoch}.jpg', 
-          'student_profiles'
+          studentService.profileImageBytes,
+          'profile_update_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          'student_profiles',
         );
       }
 
@@ -253,18 +280,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<String?> _uploadToCloudinary(Uint8List? bytes, String fileName, String folder) async {
+  Future<String?> _uploadToCloudinary(
+    Uint8List? bytes,
+    String fileName,
+    String folder,
+  ) async {
     if (bytes == null) return null;
     try {
       final cloudName = 'dfeptodqc';
       final uploadPreset = 'nszqbsrs';
-      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
-      
+      final uri = Uri.parse(
+        'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+      );
+
       final request = http.MultipartRequest('POST', uri);
       request.fields['upload_preset'] = uploadPreset;
       request.fields['folder'] = folder;
-      
-      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+
+      request.files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: fileName),
+      );
 
       final response = await request.send();
       if (response.statusCode == 200) {
@@ -291,7 +326,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFFDA00C), size: 20),
+              icon: const Icon(
+                Icons.arrow_back_ios,
+                color: Color(0xFFFDA00C),
+                size: 20,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             title: Row(
@@ -300,14 +339,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5)],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 5,
+                      ),
+                    ],
                   ),
                   child: ClipOval(
                     child: Image.asset(
-                      'assets/images/logo.png', 
-                      height: 35, width: 35, 
+                      'assets/images/logo.png',
+                      height: 35,
+                      width: 35,
                       fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => const Icon(Icons.business, color: Color(0xFF1E3A5F)),
+                      errorBuilder: (c, e, s) =>
+                          const Icon(Icons.business, color: Color(0xFF1E3A5F)),
                     ),
                   ),
                 ),
@@ -316,7 +362,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             actions: [
               LanguageToggle(),
               IconButton(
-                icon: const Icon(Icons.notifications_active_outlined, color: Color(0xFFFDA00C)),
+                icon: const Icon(
+                  Icons.notifications_active_outlined,
+                  color: Color(0xFFFDA00C),
+                ),
                 onPressed: () {},
               ),
               const SizedBox(width: 10),
@@ -332,7 +381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 30),
                   const Divider(indent: 50, endIndent: 50, thickness: 1),
                   const SizedBox(height: 20),
-                  
+
                   // Skills and CV Row
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -347,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 50), 
+                  const SizedBox(height: 50),
                 ],
               ),
             ),
@@ -357,7 +406,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: _toggleEditMode,
             backgroundColor: primaryBlue,
             icon: Icon(_isEditMode ? Icons.check : Icons.edit),
-            label: Text(_isEditMode ? (isAr ? "حفظ" : "Save") : (isAr ? "تعديل" : "Edit")),
+            label: Text(
+              _isEditMode ? (isAr ? "حفظ" : "Save") : (isAr ? "تعديل" : "Edit"),
+            ),
           ),
         );
       },
@@ -367,26 +418,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
+        ],
       ),
       child: ClipRRect(
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
         child: BottomNavigationBar(
           currentIndex: 2, // Profile is index 2
           onTap: (index) {
             if (index == 0) {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ApplicationsScreen()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ApplicationsScreen(),
+                ),
+              );
             } else if (index == 1) {
-              Navigator.pop(context); // Go back to Home
+              Navigator.pushReplacementNamed(context, '/student_home');
             }
           },
           backgroundColor: Colors.white,
           selectedItemColor: primaryBlue,
           unselectedItemColor: primaryBlue.withOpacity(0.5),
           items: const [
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.doc_text), label: "Applications"),
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.home), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.person), label: "Profile"),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.doc_text),
+              label: "Applications",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.home),
+              label: "Home",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.person),
+              label: "Profile",
+            ),
           ],
         ),
       ),
@@ -409,9 +479,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 60,
                 backgroundImage: studentService.profileImageBytes != null
                     ? MemoryImage(studentService.profileImageBytes!)
-                    : (studentService.profileImageUrl != null && studentService.profileImageUrl!.isNotEmpty)
-                        ? NetworkImage(studentService.profileImageUrl!)
-                        : AssetImage(studentService.profileImage) as ImageProvider,
+                    : (studentService.profileImageUrl != null &&
+                          studentService.profileImageUrl!.isNotEmpty)
+                    ? NetworkImage(studentService.profileImageUrl!)
+                    : AssetImage(studentService.profileImage) as ImageProvider,
               ),
             ),
             if (_isEditMode)
@@ -420,35 +491,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Container(
                   margin: const EdgeInsets.only(right: 5, bottom: 5),
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
-                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                  decoration: const BoxDecoration(
+                    color: Colors.orange,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
           ],
         ),
         const SizedBox(height: 15),
-        
+
         // Name
         if (_isEditMode)
-          _buildEditField(_nameController, fontSize: 24, fontWeight: FontWeight.bold)
+          _buildEditField(
+            _nameController,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          )
         else
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(studentService.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(
+                studentService.name,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               if (studentService.isVerified) ...[
                 const SizedBox(width: 8),
                 const Icon(Icons.verified, color: Colors.blue, size: 20),
               ],
             ],
           ),
-        
+
         const SizedBox(height: 10),
 
         // Verification Status Bar
         if (!studentService.isVerified) ...[
           GestureDetector(
-            onTap: _pickVerification,
+            onTap: studentService.verificationFileData == null
+                ? _pickVerification
+                : _pickCV,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -461,8 +551,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Icon(Icons.upload_file, size: 14, color: Colors.orange),
                   const SizedBox(width: 5),
                   Text(
-                    isAr ? "ارفع إثبات القيد للتوثيق" : "Upload verification doc",
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange),
+                    studentService.verificationFileData == null
+                        ? (isAr
+                              ? "ارفع إثبات القيد للتوثيق"
+                              : "Upload verification doc")
+                        : (isAr
+                              ? "ارفع السيرة الذاتية للتوثيق"
+                              : "Upload CV for verification"),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
                   ),
                 ],
               ),
@@ -470,27 +570,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 10),
         ],
-        
+
         // Education Details
         if (_isEditMode) ...[
           _buildEditField(_facultyController, showPencil: true),
           _buildEditField(_specialtyController, showPencil: true),
-          _buildEditField(_programController, showPencil: true, hint: isAr ? "البرنامج" : "Program"),
-          _buildEditField(_yearController, prefix: isAr ? "سنة التخرج: " : "Graduated in ", showPencil: true),
+          _buildEditField(
+            _programController,
+            showPencil: true,
+            hint: isAr ? "البرنامج" : "Program",
+          ),
+          _buildEditField(
+            _yearController,
+            prefix: isAr ? "سنة التخرج: " : "Graduated in ",
+            showPencil: true,
+          ),
         ] else ...[
-          Text(studentService.faculty, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
-          Text(studentService.specialty, style: const TextStyle(color: Colors.grey)),
-          if (studentService.program != null && studentService.program!.isNotEmpty)
-            Text("${isAr ? "برنامج" : "Program"}: ${studentService.program}", style: const TextStyle(color: Colors.grey, fontSize: 13)),
-          Text("${isAr ? "سنة التخرج" : "Graduated in"} ${studentService.graduationYear}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(
+            studentService.faculty,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            studentService.specialty,
+            style: const TextStyle(color: Colors.grey),
+          ),
+          if (studentService.program != null &&
+              studentService.program!.isNotEmpty)
+            Text(
+              "${isAr ? "برنامج" : "Program"}: ${studentService.program}",
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+          Text(
+            "${(studentService.graduationYear.contains("Year") || studentService.graduationYear.contains("السنة")) ? (isAr ? "السنة الدراسية" : "Study Year") : (isAr ? "سنة التخرج" : "Graduated in")} ${studentService.graduationYear}",
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
           const SizedBox(height: 5),
-          Text(studentService.email, style: const TextStyle(color: Colors.blueGrey, fontSize: 13)),
+          Text(
+            studentService.email,
+            style: const TextStyle(color: Colors.blueGrey, fontSize: 13),
+          ),
         ],
       ],
     );
   }
 
-  Widget _buildEditField(TextEditingController controller, {double fontSize = 14, FontWeight fontWeight = FontWeight.normal, String prefix = "", bool showPencil = false, String hint = ""}) {
+  Widget _buildEditField(
+    TextEditingController controller, {
+    double fontSize = 14,
+    FontWeight fontWeight = FontWeight.normal,
+    String prefix = "",
+    bool showPencil = false,
+    String hint = "",
+  }) {
     return Container(
       width: 250,
       margin: const EdgeInsets.only(bottom: 5),
@@ -503,8 +637,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           hintText: hint,
           contentPadding: const EdgeInsets.symmetric(vertical: 5),
           prefixText: prefix,
-          suffixIcon: showPencil ? const Icon(Icons.edit, size: 14, color: Colors.blueAccent) : null,
-          enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.blueAccent, width: 1)),
+          suffixIcon: showPencil
+              ? const Icon(Icons.edit, size: 14, color: Colors.blueAccent)
+              : null,
+          enabledBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.blueAccent, width: 1),
+          ),
         ),
       ),
     );
@@ -513,14 +651,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildSkillsSection() {
     return Column(
       children: [
-        Text(appLocalization.translate('skills'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          appLocalization.translate('skills'),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 15),
         Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,7 +671,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: studentService.skills.map((skill) => _buildSkillChip(skill)).toList(),
+                children: studentService.skills
+                    .map((skill) => _buildSkillChip(skill))
+                    .toList(),
               ),
               if (_isEditMode) ...[
                 const SizedBox(height: 15),
@@ -578,7 +723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Flexible(
             child: Text(
-              skill, 
+              skill,
               style: const TextStyle(fontSize: 12, color: Colors.black87),
               overflow: TextOverflow.ellipsis,
             ),
@@ -598,24 +743,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildCVSection() {
     return Column(
       children: [
-        Text(appLocalization.translate('cv'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 15),
+        Text(
+          appLocalization.translate('cv'),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
         Container(
-          height: 150,
+          height: 100,
           width: double.infinity,
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            ],
           ),
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Icon(Icons.description, size: 50, color: Colors.grey.shade400),
+              Icon(Icons.description, size: 40, color: Colors.grey.shade400),
               if (studentService.cvFileName != null)
                 Positioned(
-                  top: 10,
+                  top: 0,
                   child: Text(
                     studentService.cvFileName!,
                     style: const TextStyle(fontSize: 10, color: Colors.grey),
@@ -623,23 +773,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               Positioned(
-                bottom: 0,
-                left: 0,
+                bottom: 5,
+                left: 10,
                 child: GestureDetector(
                   onTap: _viewCV,
                   child: Container(
-                    padding: const EdgeInsets.all(5),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: primaryBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
                     child: Icon(Icons.visibility, color: primaryBlue, size: 20),
                   ),
                 ),
               ),
               if (_isEditMode)
                 Positioned(
-                  bottom: 0,
-                  right: 0,
+                  top: 5,
+                  right: 5,
                   child: GestureDetector(
                     onTap: _pickCV,
-                    child: Icon(Icons.edit, color: Colors.grey.shade600, size: 18),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.edit,
+                        color: Colors.grey.shade600,
+                        size: 18,
+                      ),
+                    ),
                   ),
                 ),
             ],

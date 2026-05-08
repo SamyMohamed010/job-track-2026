@@ -5,8 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'job_details_screen.dart';
 import 'login_screen.dart';
-import 'profile_screen.dart';
-import 'applications_screen.dart';
 import '../../../app_localization.dart';
 import '../../widgets/language_toggle.dart';
 
@@ -25,7 +23,7 @@ class Job {
   final String company;
   final String location;
   final String type; // 'Internship', 'Part-time', 'Full-time'
-  final String logoPath;
+  final String logoUrl;
   final String description;
   final String requirements;
   final String salaryFrom;
@@ -38,7 +36,7 @@ class Job {
     required this.company,
     required this.location,
     required this.type,
-    required this.logoPath,
+    required this.logoUrl,
     required this.description,
     required this.requirements,
     required this.salaryFrom,
@@ -142,8 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 location:
                                     data['location'] ?? 'Unknown Location',
                                 type: data['jobType'] ?? 'Full-time',
-                                logoPath:
-                                    'assets/images/logo image.jpg', // Placeholder for now
+                                logoUrl: data['companyLogoUrl'] ?? '',
                                 description: data['description'] ?? '',
                                 requirements: data['requirements'] ?? '',
                                 salaryFrom: data['salaryFrom'] ?? '',
@@ -300,11 +297,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            Navigator.pushReplacement(
+                            Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const LoginScreen(),
                               ),
+                              (route) => false,
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -413,7 +411,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('notifications')
-                        .where('targetId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                        .where(
+                          'targetId',
+                          isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                        )
                         .orderBy('createdAt', descending: true)
                         .snapshots(),
                     builder: (context, snapshot) {
@@ -555,6 +556,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildJobCard(Job job) {
+    bool isAr = appLocalization.locale.languageCode == 'ar';
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(16),
@@ -563,145 +565,179 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          Container(
-            height: 50,
-            width: 50,
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: grayBg,
-              border: Border.all(color: Colors.black12),
-            ),
-            child: Image.asset(
-              job.logoPath,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  Icon(Icons.business, color: primaryBlue),
-            ),
-          ),
-          const SizedBox(width: 15),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Company Logo
+              Container(
+                height: 60,
+                width: 60,
+                clipBehavior: Clip.hardEdge,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: grayBg,
+                  border: Border.all(color: Colors.black12, width: 0.5),
+                ),
+                child: job.logoUrl.isNotEmpty
+                    ? Image.network(
+                        job.logoUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.business, color: primaryBlue, size: 30),
+                      )
+                    : Icon(Icons.business, color: primaryBlue, size: 30),
+              ),
+              const SizedBox(width: 15),
+              // Job Info
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        job.title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: primaryBlue,
-                        ),
+                    Text(
+                      job.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                        color: primaryBlue,
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    const SizedBox(height: 4),
+                    Text(
+                      job.company,
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            // ignore: deprecated_member_use
-                            color: primaryBlueLight.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            texts[job.type] ?? job.type,
-                            style: TextStyle(
-                              color: primaryBlueLight,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 16,
+                          color: grayText,
                         ),
-                        const SizedBox(height: 8),
-                        InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => JobDetailsScreen(
-                                  jobId: job.id,
-                                  companyId: job.companyId,
-                                  title: job.title,
-                                  company: job.company,
-                                  location: job.location,
-                                  description: job.description,
-                                  requirements: job.requirements,
-                                  jobType: job.type,
-                                  salaryFrom: job.salaryFrom,
-                                  salaryTo: job.salaryTo,
-                                ),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: primaryBlueLight, // 229BD8
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              texts['view']!,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                        const SizedBox(width: 4),
+                        Text(
+                          job.location,
+                          style: TextStyle(
+                            color: grayText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  job.company,
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.location_on_outlined, size: 16, color: grayText),
-                    const SizedBox(width: 4),
-                    Text(
-                      job.location,
+              ),
+              // Job Type & View Button
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: primaryBlueLight.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      texts[job.type] ?? job.type,
                       style: TextStyle(
-                        color: grayText,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                        color: primaryBlueLight,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => JobDetailsScreen(
+                            jobId: job.id,
+                            companyId: job.companyId,
+                            title: job.title,
+                            company: job.company,
+                            logoUrl: job.logoUrl,
+                            location: job.location,
+                            description: job.description,
+                            requirements: job.requirements,
+                            jobType: job.type,
+                            salaryFrom: job.salaryFrom,
+                            salaryTo: job.salaryTo,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlueLight,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 0,
+                      ),
+                      minimumSize: const Size(60, 30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      texts['view']!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const Divider(height: 24, thickness: 0.5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.payments_outlined,
+                    size: 18,
+                    color: primaryBlueLight,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    job.salaryFrom.isEmpty || job.salaryFrom == "0"
+                        ? (isAr ? "راتب غير محدد" : "Salary Negotiable")
+                        : "\$${job.salaryFrom} - \$${job.salaryTo}",
+                    style: TextStyle(
+                      color: primaryBlue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                isAr ? "منذ قليل" : "Just now", // Placeholder for time ago
+                style: TextStyle(color: grayText, fontSize: 12),
+              ),
+            ],
           ),
         ],
       ),
@@ -718,7 +754,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
@@ -739,32 +774,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 _currentIndex = index;
               });
               if (index == 0) {
-                Navigator.push(
+                Navigator.pushReplacementNamed(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const ApplicationsScreen(),
-                  ),
-                ).then((_) {
-                  setState(() {
-                    _currentIndex = 1;
-                  });
-                });
+                  '/student_applications',
+                );
               } else if (index == 2) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfileScreen(),
-                  ),
-                ).then((_) {
-                  setState(() {
-                    _currentIndex = 1;
-                  });
-                });
+                Navigator.pushReplacementNamed(context, '/student_profile');
               }
             },
             backgroundColor: Colors.white,
             selectedItemColor: primaryBlueLight,
-            // ignore: deprecated_member_use
             unselectedItemColor: primaryBlue.withOpacity(0.5),
             showSelectedLabels: true,
             showUnselectedLabels: true,
@@ -782,21 +801,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: EdgeInsets.only(bottom: 5.0),
                   child: Icon(CupertinoIcons.doc_text),
                 ),
-                label: texts['navApp'],
+                label: texts['navApp'] ?? '',
               ),
               BottomNavigationBarItem(
                 icon: const Padding(
                   padding: EdgeInsets.only(bottom: 5.0),
                   child: Icon(CupertinoIcons.home),
                 ),
-                label: texts['navHome'],
+                label: texts['navHome'] ?? '',
               ),
               BottomNavigationBarItem(
                 icon: const Padding(
                   padding: EdgeInsets.only(bottom: 5.0),
                   child: Icon(CupertinoIcons.person),
                 ),
-                label: texts['navProfile'],
+                label: texts['navProfile'] ?? '',
               ),
             ],
           ),
@@ -845,9 +864,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.push(
+              Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
               );
             },
             style: TextButton.styleFrom(

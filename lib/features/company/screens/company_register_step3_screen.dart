@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -198,6 +199,17 @@ class _CompanyRegisterStep3ScreenState
                       role: 'company',
                       additionalData: companyInfo,
                     );
+
+                    // Create Notification for Admin
+                    await FirebaseFirestore.instance.collection('notifications').add({
+                      'targetType': 'admin',
+                      'title': 'New Company Registration',
+                      'message': '${data.name} has registered and is waiting for approval.',
+                      'companyName': data.name,
+                      'createdAt': FieldValue.serverTimestamp(),
+                      'isRead': false,
+                      'type': 'new_company',
+                    });
 
                     if (mounted) {
                       Navigator.pushAndRemoveUntil(

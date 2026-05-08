@@ -201,16 +201,28 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
                     ),
                   ),
                   const SizedBox(width: 15),
-                  Expanded(
+                    Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        setState(() => widget.company.isApproved = true);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Company approved successfully"),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
+                      onPressed: () async {
+                        if (widget.company.id != null) {
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(widget.company.id)
+                              .update({
+                                'isApproved': true,
+                                'status': 'approved'
+                              });
+                          setState(() => widget.company.isApproved = true);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Company approved successfully"),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            Navigator.pop(context);
+                          }
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF229BD8),

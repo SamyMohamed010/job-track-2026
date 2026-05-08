@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'company_notifications_sheet.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'company_notifications_sheet.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../company_data.dart';
 
@@ -22,6 +26,7 @@ class _CompanyEditProfileScreenState extends State<CompanyEditProfileScreen> {
   
   XFile? _logoImage;
   final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -52,6 +57,30 @@ class _CompanyEditProfileScreenState extends State<CompanyEditProfileScreen> {
         _logoImage = pickedFile;
       });
     }
+  }
+
+  Future<String?> _uploadToCloudinary(File file, String folder) async {
+    try {
+      final cloudName = 'dfeptodqc';
+      final uploadPreset = 'nszqbsrs';
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      
+      final request = http.MultipartRequest('POST', uri);
+      request.fields['upload_preset'] = uploadPreset;
+      request.fields['folder'] = folder;
+      
+      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        final json = jsonDecode(responseData);
+        return json['secure_url'];
+      }
+    } catch (e) {
+      debugPrint("Cloudinary Error: $e");
+    }
+    return null;
   }
 
   @override
@@ -144,19 +173,44 @@ class _CompanyEditProfileScreenState extends State<CompanyEditProfileScreen> {
               _buildTextField("Website", _websiteController),
               const SizedBox(height: 30),
 
-              // Save Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
+                      setState(() => _isLoading = true);
+                      
                       final data = CompanyData();
+                      String? newLogoUrl;
+                      
+                      if (_logoImage != null && _logoImage != data.logoImage) {
+                        newLogoUrl = await _uploadToCloudinary(File(_logoImage!.path), 'company_logos');
+                      }
+
                       data.name = _nameController.text;
                       data.industry = _industryController.text;
                       data.overview = _overviewController.text;
                       data.location = _locationController.text;
                       data.website = _websiteController.text;
                       data.logoImage = _logoImage;
+                      if (newLogoUrl != null) data.logoUrl = newLogoUrl;
+
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user.uid)
+                            .update({
+                          'name': data.name,
+                          'industry': data.industry,
+                          'overview': data.overview,
+                          'location': data.location,
+                          'website': data.website,
+                          if (newLogoUrl != null) 'logoUrl': newLogoUrl,
+                        });
+                      }
+
+                      setState(() => _isLoading = false);
                       Navigator.pop(context, true);
                     }
                   },
@@ -167,7 +221,9 @@ class _CompanyEditProfileScreenState extends State<CompanyEditProfileScreen> {
                     ),
                     backgroundColor: const Color(0xFF229BD8),
                   ),
-                  child: const Text("Save Changes", style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text("Save Changes", style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

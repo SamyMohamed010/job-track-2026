@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_localization.dart';
 import '../features/student/screens/login_screen.dart';
 import '../features/widgets/language_toggle.dart';
+import '../core/student_service.dart';
 import '../features/localization.dart';
 
 class StudentAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -43,11 +44,15 @@ class StudentAppBar extends StatelessWidget implements PreferredSizeWidget {
                   )
                 ],
               ),
-              child: Image.asset(
-                'assets/images/logo image.jpg',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Colors.grey),
-              ),
+              child: studentService.profileImageBytes != null
+                  ? Image.memory(studentService.profileImageBytes!, fit: BoxFit.cover)
+                  : (studentService.profileImageUrl != null && studentService.profileImageUrl!.isNotEmpty)
+                      ? Image.network(studentService.profileImageUrl!, fit: BoxFit.cover)
+                      : Image.asset(
+                          'assets/images/logo image.jpg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Colors.grey),
+                        ),
             ),
 
             if (showLogout) ...[
@@ -69,7 +74,11 @@ class StudentAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                              (route) => false,
+                            );
                           },
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade50, elevation: 0),
                           child: Text(isAr ? "خروج" : "Logout", style: const TextStyle(color: Colors.red)),
