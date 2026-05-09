@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'company_notifications_sheet.dart';
+import 'company_student_profile_view.dart';
+
 
 class CompanyJobApplicantsScreen extends StatelessWidget {
   final String jobId;
@@ -86,10 +88,13 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
       builder: (context, studentSnapshot) {
         String studentName = "Loading...";
         String profileImageUrl = "";
+        String faculty = "";
+
         if (studentSnapshot.hasData && studentSnapshot.data!.exists) {
           final sData = studentSnapshot.data!.data() as Map<String, dynamic>;
           studentName = sData['name'] ?? "Unknown Student";
           profileImageUrl = sData['profileImageUrl'] ?? sData['imageUrl'] ?? "";
+          faculty = sData['faculty'] ?? sData['specialty'] ?? "";
         }
 
         return Container(
@@ -100,48 +105,66 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
           ),
-          child: Column(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFFEBEEF4),
-                    backgroundImage: profileImageUrl.isNotEmpty ? NetworkImage(profileImageUrl) : null,
-                    child: profileImageUrl.isEmpty ? const Icon(Icons.person, color: const Color(0xFF229BD8)) : null,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text(status, style: TextStyle(color: _getStatusColor(status), fontWeight: FontWeight.w600, fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                ],
+              CircleAvatar(
+                backgroundColor: const Color(0xFFEBEEF4),
+                backgroundImage: profileImageUrl.isNotEmpty ? NetworkImage(profileImageUrl) : null,
+                child: profileImageUrl.isEmpty ? const Icon(Icons.person, color: const Color(0xFF229BD8)) : null,
               ),
-              if (status == 'Pending') ...[
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextButton(
-                      onPressed: () => _updateStatus(context, appId, studentId, companyName, 'Rejected'),
-                      child: const Text("Reject", style: TextStyle(color: Colors.red)),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () => _updateStatus(context, appId, studentId, companyName, 'Accepted'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF229BD8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text("Accept", style: TextStyle(color: Colors.white)),
+                    Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    if (faculty.isNotEmpty)
+                      Text(faculty, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CompanyStudentProfileView(studentId: studentId),
+                          ),
+                        );
+                      },
+                      child: const Icon(Icons.remove_red_eye, color: Color(0xFF229BD8), size: 22),
                     ),
                   ],
                 ),
-              ],
+              ),
+              if (status == 'Pending')
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => _updateStatus(context, appId, studentId, companyName, 'Accepted'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF38CC77),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: const Text("Accept", style: TextStyle(color: Colors.white, fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => _updateStatus(context, appId, studentId, companyName, 'Rejected'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF37841),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: const Text("Reject", style: TextStyle(color: Colors.white, fontSize: 12)),
+                    ),
+                  ],
+                )
+              else
+                Text(status, style: TextStyle(color: _getStatusColor(status), fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
         );
