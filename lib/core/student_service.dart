@@ -23,6 +23,8 @@ class StudentService {
   ];
   String? cvFileName;
   Uint8List? cvFileData;
+  String? cvUrl;
+  
   String profileImage = "assets/images/pro.jpg";
   Uint8List? profileImageBytes;
   String? profileImageUrl;
@@ -32,7 +34,9 @@ class StudentService {
   // Verification Document
   String? verificationFileName;
   Uint8List? verificationFileData;
-  bool get isVerified => verificationFileData != null && cvFileData != null;
+  String? verificationUrl;
+  
+  bool isVerified = false; // Will be set from database
 }
 
 final studentService = StudentService();

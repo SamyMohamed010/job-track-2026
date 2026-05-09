@@ -7,6 +7,7 @@ import 'job_details_screen.dart';
 import 'login_screen.dart';
 import '../../../app_localization.dart';
 import '../../widgets/language_toggle.dart';
+import '../widgets/notification_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -337,7 +338,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const LanguageToggle(),
               // Bell (No circle background, just icon)
               GestureDetector(
-                onTap: () => _showNotificationsSheet(context),
+                onTap: () => NotificationSheet.show(context),
                 child: const Icon(
                   Icons.notifications_none,
                   color: Colors.amber,
@@ -382,142 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showNotificationsSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) {
-        return Directionality(
-          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            height: 400,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  texts['notifications']!,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: primaryBlue,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('notifications')
-                        .where(
-                          'targetId',
-                          isEqualTo: FirebaseAuth.instance.currentUser?.uid,
-                        )
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(color: Colors.red)));
-                      }
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return Center(
-                          child: Text(
-                            isArabic ? "لا توجد إشعارات" : "No notifications",
-                            style: TextStyle(color: grayText),
-                          ),
-                        );
-                      }
 
-                      final notificationsList = snapshot.data!.docs.toList();
-                      notificationsList.sort((a, b) {
-                        final aData = a.data() as Map<String, dynamic>;
-                        final bData = b.data() as Map<String, dynamic>;
-                        final aTime = aData['createdAt'] as Timestamp?;
-                        final bTime = bData['createdAt'] as Timestamp?;
-                        if (aTime == null || bTime == null) return 0;
-                        return bTime.compareTo(aTime);
-                      });
-
-                      return ListView.builder(
-                        itemCount: notificationsList.length,
-                        itemBuilder: (context, index) {
-                          var doc = notificationsList[index];
-                          var data = doc.data() as Map<String, dynamic>;
-                          return _buildNotificationItem(
-                            title: data['title'] ?? 'Notification',
-                            subtitle: data['message'] ?? '',
-                            icon: Icons.notifications,
-                            time: "", // You can parse timestamp if needed
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildNotificationItem({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required String time,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: grayBg,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: primaryBlueLight, size: 20),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: primaryBlue,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: grayText, fontSize: 12)),
-              ],
-            ),
-          ),
-          Text(
-            time,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildFilters() {
     final filters = ['All', 'Internship', 'Part-time', 'Full-time'];

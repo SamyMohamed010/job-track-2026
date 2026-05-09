@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../localization.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../app_localization.dart';
 import '../../widgets/language_toggle.dart';
+import '../widgets/notification_sheet.dart';
+import 'job_details_screen.dart';
 
 class CompanyProfileScreen extends StatefulWidget {
-  const CompanyProfileScreen({super.key});
+  final String companyId;
+  const CompanyProfileScreen({super.key, required this.companyId});
 
   @override
   State<CompanyProfileScreen> createState() => _CompanyProfileScreenState();
@@ -13,41 +17,10 @@ class CompanyProfileScreen extends StatefulWidget {
 class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
   bool _isExpanded = false;
 
-  // دالة لإظهار الإشعارات من الأسفل (Bottom Sheet)
-  void _showNotificationsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // تخليه ياخد مساحة المحتوى بس
-            children: [
-              const Text("Notifications", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              _buildNotificationItem(Icons.check_circle, Colors.green, "Application Accepted", "Your application for Google has been accepted."),
-              _buildNotificationItem(Icons.info, Colors.blue, "New Job Alert", "A new 'Flutter Developer' job was posted."),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildNotificationItem(IconData icon, Color color, String title, String subtitle) {
-    return ListTile(
-      leading: Icon(icon, color: color, size: 30),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(subtitle),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    bool isAr = appLocalization.locale.languageCode == 'ar';
+    
     return Scaffold(
       backgroundColor: const Color(0xFFEBEEF4),
       appBar: AppBar(
@@ -61,69 +34,130 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
           const LanguageToggle(),
           IconButton(
             icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFFFDA00C), size: 24),
-            onPressed: () => _showNotificationsBottomSheet(context), // تغيير هنا
+            onPressed: () => NotificationSheet.show(context),
           ),
           const SizedBox(width: 10),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            const CircleAvatar(
-              radius: 45,
-              backgroundColor: Colors.white,
-              backgroundImage: AssetImage('assets/images/organic.jpg'),
-            ),
-            const SizedBox(height: 10),
-            const Text("Organic", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection('users').doc(widget.companyId).get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text("Company not found"));
+          }
+
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final name = data['name'] ?? 'Unknown Company';
+          final logoUrl = data['logoUrl'] ?? '';
+          final overview = data['overview'] ?? (isAr ? "لا يوجد وصف متاح" : "No overview available.");
+          final location = data['location'] ?? (isAr ? "غير محدد" : "Unknown");
+          final website = data['website'] ?? "";
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
               children: [
-                const Icon(Icons.location_on, color: Colors.redAccent, size: 18),
-                const SizedBox(width: 5),
-                InkWell(
-                  onTap: () async {
-                    final Uri url = Uri.parse("https://www.google.com/maps/search/?api=1&query=Cairo,+Egypt");
-                    if (await canLaunchUrl(url)) await launchUrl(url);
-                  },
-                  child: const Text(
-                    "Cairo, Egypt",
-                    style: TextStyle(color: Colors.grey, decoration: TextDecoration.underline),
+                Container(
+                  height: 90,
+                  width: 90,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10)]
+                  ),
+                  child: logoUrl.isNotEmpty
+                      ? Image.network(logoUrl, fit: BoxFit.contain, errorBuilder: (c, e, s) => const Icon(Icons.business, size: 40))
+                      : const Icon(Icons.business, size: 40),
+                ),
+                const SizedBox(height: 10),
+                Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.redAccent, size: 18),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final Uri url = Uri.parse("https://www.google.com/maps/search/?api=1&query=$location");
+                          if (await canLaunchUrl(url)) await launchUrl(url);
+                        },
+                        child: Text(
+                          location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.grey, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 25),
+
+                _buildSectionCard(
+                  title: isAr ? "عن الشركة" : "About Company",
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        overview,
+                        maxLines: _isExpanded ? 20 : 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.black54, height: 1.5),
+                      ),
+                      if (overview.length > 100)
+                        InkWell(
+                          onTap: () => setState(() => _isExpanded = !_isExpanded),
+                          child: Text(
+                            isAr ? (_isExpanded ? "عرض أقل" : "عرض المزيد >") : (_isExpanded ? "See less" : "See more >"),
+                            style: const TextStyle(color: Color(0xFF229BD8), fontWeight: FontWeight.bold)
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 25),
+
+                Align(
+                  alignment: isAr ? Alignment.centerRight : Alignment.centerLeft, 
+                  child: Text(isAr ? "الوظائف المتاحة" : "Posted Jobs", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))
+                ),
+                const SizedBox(height: 15),
+
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('jobs')
+                      .where('companyId', isEqualTo: widget.companyId)
+                      .snapshots(),
+                  builder: (context, jobSnapshot) {
+                    if (jobSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!jobSnapshot.hasData || jobSnapshot.data!.docs.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Text(isAr ? "لا توجد وظائف متاحة حالياً" : "No jobs posted yet."),
+                      );
+                    }
+
+                    return Column(
+                      children: jobSnapshot.data!.docs.map((doc) {
+                        final job = doc.data() as Map<String, dynamic>;
+                        return _buildJobItem(context, doc.id, job, logoUrl, isAr);
+                      }).toList(),
+                    );
+                  },
+                ),
+                const SizedBox(height: 30),
               ],
             ),
-            const SizedBox(height: 25),
-
-            _buildSectionCard(
-              title: AppLocale.tr(context, "About Organic"),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocale.tr(context, "A leading manufacturer and distributor of high-quality pharmaceutical products, dedicated to improving public health."),
-                    maxLines: _isExpanded ? 10 : 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.black54, height: 1.5),
-                  ),
-                  InkWell(
-                    onTap: () => setState(() => _isExpanded = !_isExpanded),
-                    child: Text(AppLocale.tr(context, _isExpanded ? "See less" : "See more >"), style: const TextStyle(color: Color(0xFF229BD8), fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 25),
-
-            Align(alignment: Alignment.centerLeft, child: Text(AppLocale.tr(context, "Posted Jobs"), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-            const SizedBox(height: 15),
-
-            _buildJobItem(AppLocale.tr(context, "Pharmaceutical Control"), AppLocale.tr(context, "Cairo, Egypt"), AppLocale.tr(context, "Full-Time")),
-            _buildJobItem(AppLocale.tr(context, "Quality Analyst"), AppLocale.tr(context, "Alexandria, Egypt"), AppLocale.tr(context, "Internship")),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -141,42 +175,79 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
     );
   }
 
-  Widget _buildJobItem(String title, String location, String type) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
-      width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))]),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // يضمن ظهور المحتوى من البداية
-        children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const CircleAvatar(backgroundColor: Color(0xFFEBEEF4), child: Icon(Icons.medication, color: Color(0xFF229BD8))),
-            title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            trailing: Text(type, style: const TextStyle(color: Color(0xFF229BD8))),
+  Widget _buildJobItem(BuildContext context, String jobId, Map<String, dynamic> job, String logoUrl, bool isAr) {
+    final title = job['title'] ?? 'No Title';
+    final location = job['location'] ?? '';
+    final type = job['jobType'] ?? 'Full-Time';
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JobDetailsScreen(
+              jobId: jobId,
+              companyId: job['companyId'] ?? '',
+              title: title,
+              company: job['companyName'] ?? '',
+              logoUrl: logoUrl,
+              location: location,
+              description: job['description'] ?? '',
+              requirements: job['requirements'] ?? '',
+              jobType: type,
+              salaryFrom: job['salaryFrom'] ?? '',
+              salaryTo: job['salaryTo'] ?? '',
+            ),
           ),
-          const Divider(),
-          // تصليح ظهور اللوكيشن تماماً
-          Row(
-            children: [
-              const Icon(Icons.location_on, color: Colors.redAccent, size: 18),
-              const SizedBox(width: 5),
-              Expanded( // يضمن إن النص ما يزحمش الأيقونة
-                child: InkWell(
-                  onTap: () async {
-                    final Uri url = Uri.parse("https://www.google.com/maps/search/?api=1&query=$location");
-                    if (await canLaunchUrl(url)) await launchUrl(url);
-                  },
-                  child: Text(
-                    location,
-                    style: const TextStyle(color: Colors.grey, decoration: TextDecoration.underline),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        padding: const EdgeInsets.all(15),
+        width: double.infinity,
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  height: 40, width: 40,
+                  decoration: const BoxDecoration(color: Color(0xFFEBEEF4), shape: BoxShape.circle),
+                  child: logoUrl.isNotEmpty 
+                      ? ClipOval(child: Image.network(logoUrl, fit: BoxFit.cover))
+                      : const Icon(Icons.business, color: Color(0xFF229BD8)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text(type, style: const TextStyle(color: Color(0xFF229BD8), fontSize: 12)),
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+              ],
+            ),
+            const Divider(),
+            Row(
+              children: [
+                const Icon(Icons.location_on, color: Colors.redAccent, size: 16),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    location,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

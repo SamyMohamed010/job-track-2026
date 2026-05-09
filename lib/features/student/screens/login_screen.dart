@@ -326,6 +326,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   data['graduationYear'] ?? '';
                               studentService.program = data['program'];
                               studentService.profileImageUrl = data['profileImageUrl'];
+                              studentService.cvUrl = data['cvUrl'];
+                              studentService.cvFileName = data['cvFileName'];
+                              studentService.verificationUrl = data['verificationUrl'];
+                              studentService.verificationFileName = data['verificationFileName'];
+                              studentService.isVerified = data['isVerified'] ?? false;
 
                               if (data['skills'] != null) {
                                 studentService.skills = List<String>.from(

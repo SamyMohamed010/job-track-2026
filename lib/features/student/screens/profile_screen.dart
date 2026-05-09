@@ -94,6 +94,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _viewCV() async {
     bool isAr = appLocalization.locale.languageCode == 'ar';
+    if (studentService.cvUrl != null && studentService.cvUrl!.isNotEmpty) {
+      final uri = Uri.parse(studentService.cvUrl!);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        return;
+      }
+    }
+
     if (studentService.cvFileData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -251,6 +259,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
 
+      String? newCvUrl;
+      if (studentService.cvFileData != null && !studentService.cvFileData!.isEmpty) {
+        newCvUrl = await _uploadToCloudinary(
+          studentService.cvFileData,
+          studentService.cvFileName ?? 'cv_${DateTime.now().millisecondsSinceEpoch}.pdf',
+          'student_cvs',
+          resourceType: 'auto',
+        );
+      }
+
+      String? newVerificationUrl;
+      if (studentService.verificationFileData != null && !studentService.verificationFileData!.isEmpty) {
+        newVerificationUrl = await _uploadToCloudinary(
+          studentService.verificationFileData,
+          studentService.verificationFileName ?? 'verification_${DateTime.now().millisecondsSinceEpoch}.pdf',
+          'student_verifications',
+          resourceType: 'auto',
+        );
+      }
+
       setState(() {
         studentService.name = _nameController.text;
         studentService.graduationYear = _yearController.text;
@@ -271,7 +299,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'specialty': studentService.specialty,
           'program': studentService.program,
           if (newProfileImageUrl != null) 'profileImageUrl': newProfileImageUrl,
+          if (newCvUrl != null) 'cvUrl': newCvUrl,
+          if (newCvUrl != null) 'cvFileName': studentService.cvFileName,
+          if (newVerificationUrl != null) 'verificationUrl': newVerificationUrl,
+          if (newVerificationUrl != null) 'verificationFileName': studentService.verificationFileName,
+          if (newVerificationUrl != null) 'isVerified': true,
         });
+        if (newVerificationUrl != null) {
+          studentService.isVerified = true;
+        }
       }
     } else {
       setState(() {
@@ -284,13 +320,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Uint8List? bytes,
     String fileName,
     String folder,
+    {String resourceType = 'image'}
   ) async {
     if (bytes == null) return null;
     try {
       final cloudName = 'dfeptodqc';
       final uploadPreset = 'nszqbsrs';
       final uri = Uri.parse(
-        'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+        'https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload',
       );
 
       final request = http.MultipartRequest('POST', uri);
@@ -536,7 +573,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Verification Status Bar
         if (!studentService.isVerified) ...[
           GestureDetector(
-            onTap: studentService.verificationFileData == null
+            onTap: (studentService.verificationFileData == null && studentService.verificationUrl == null)
                 ? _pickVerification
                 : _pickCV,
             child: Container(
@@ -551,7 +588,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const Icon(Icons.upload_file, size: 14, color: Colors.orange),
                   const SizedBox(width: 5),
                   Text(
-                    studentService.verificationFileData == null
+                    (studentService.verificationFileData == null && studentService.verificationUrl == null)
                         ? (isAr
                               ? "ارفع إثبات القيد للتوثيق"
                               : "Upload verification doc")

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../core/student_service.dart';
-import 'company_profile_screen.dart';
-import '../../localization.dart';
-import '../../widgets/language_toggle.dart';
-import 'company_profile_screen.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/student_service.dart';
+import '../../../app_localization.dart';
+import '../../localization.dart';
+import '../../widgets/language_toggle.dart';
+import 'company_profile_screen.dart';
+import '../widgets/notification_sheet.dart';
+
 class JobDetailsScreen extends StatefulWidget {
   final String jobId;
   final String companyId;
@@ -43,13 +45,37 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   bool _isApplied = false;
 
   @override
+  void initState() {
+    super.initState();
+    _checkIfApplied();
+  }
+
+  Future<void> _checkIfApplied() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('applications')
+          .where('jobId', isEqualTo: widget.jobId)
+          .where('studentId', isEqualTo: user.uid)
+          .get();
+      if (querySnapshot.docs.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _isApplied = true;
+          });
+        }
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEBEEF4),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leadingWidth: 110,
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFFDA00C), size: 20),
           onPressed: () => Navigator.pop(context),
@@ -58,7 +84,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           const LanguageToggle(),
           IconButton(
             icon: const Icon(Icons.notifications_active_outlined, color: Color(0xFFFDA00C), size: 24),
-            onPressed: () => _showNotifications(context),
+            onPressed: () => NotificationSheet.show(context),
           ),
           const SizedBox(width: 10),
         ],
@@ -142,7 +168,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             const SizedBox(height: 40),
             // زر التقديم (يتغير عند الضغط)
             ElevatedButton(
-              onPressed: () async {
+              onPressed: _isApplied ? null : () async {
                 if (studentService.isVerified) {
                   setState(() => _isApplied = true);
                   
@@ -155,7 +181,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         'studentId': user.uid,
                         'jobTitle': widget.title,
                         'companyName': widget.company,
-                        'status': 'Pending',
+                        'companyLogoUrl': widget.logoUrl,
+                        'status': 'Applied',
                         'appliedAt': FieldValue.serverTimestamp(),
                       });
                       
@@ -190,9 +217,21 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             // زر عرض الشركة
             TextButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const CompanyProfileScreen()));
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => CompanyProfileScreen(companyId: widget.companyId)
+                  )
+                );
               },
-              child: Text(AppLocale.tr(context, "View Company Profile"), style: const TextStyle(color: Color(0xFF229BD8), decoration: TextDecoration.underline, fontWeight: FontWeight.bold)),
+              child: Text(
+                AppLocale.tr(context, "View Company Profile"), 
+                style: const TextStyle(
+                  color: Color(0xFF229BD8), 
+                  decoration: TextDecoration.underline, 
+                  fontWeight: FontWeight.bold
+                )
+              ),
             ),
             const SizedBox(height: 30),
           ],
@@ -238,31 +277,16 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
   Widget _buildReqItem(String text) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Row(children: [const Icon(Icons.check_circle, size: 18, color: Color(0xFFFDA00C)), const SizedBox(width: 10), Expanded(child: Text(text, style: const TextStyle(color: Colors.black54)))]));
 
-  Widget _buildInfoChip(IconData icon, String label, Color color) => Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 16, color: color), const SizedBox(width: 6), Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12))]));
-
-  void _showNotifications(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (context) => Container(
-      padding: const EdgeInsets.all(20),
-      height: 350,
-      child: Column(
-        children: [
-          const Text("Notifications", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          const Divider(),
-          const SizedBox(height: 10),
-          ListTile(
-            leading: const Icon(Icons.check_circle, color: Colors.green, size: 30),
-            title: const Text("Application Accepted", style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Your application for Google has been accepted!"),
-            trailing: const Text("Now", style: TextStyle(color: Colors.grey, fontSize: 12)),
-          ),
-          const Divider(),
-        ],
-      ),
-    ),
+  Widget _buildInfoChip(IconData icon, String label, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), 
+    decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)), 
+    child: Row(
+      mainAxisSize: MainAxisSize.min, 
+      children: [
+        Icon(icon, size: 16, color: color), 
+        const SizedBox(width: 6), 
+        Flexible(child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis))
+      ]
+    )
   );
-}
 }

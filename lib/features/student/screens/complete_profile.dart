@@ -92,12 +92,12 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   String? verificationFileName;
   Uint8List? verificationFileData;
 
-  Future<String?> _uploadToCloudinary(Uint8List? bytes, String fileName, String folder) async {
+  Future<String?> _uploadToCloudinary(Uint8List? bytes, String fileName, String folder, {String resourceType = 'image'}) async {
     if (bytes == null) return null;
     try {
       final cloudName = 'dfeptodqc';
       final uploadPreset = 'nszqbsrs';
-      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload');
       
       final request = http.MultipartRequest('POST', uri);
       request.fields['upload_preset'] = uploadPreset;
@@ -824,6 +824,19 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         studentService.profileImageUrl = profileImageUrl;
                       }
 
+                      String? cvUrl;
+                      if (cvFileData != null && cvFileName != null) {
+                        cvUrl = await _uploadToCloudinary(cvFileData, cvFileName!, 'student_cvs', resourceType: 'auto');
+                        studentService.cvUrl = cvUrl;
+                      }
+
+                      String? verificationUrl;
+                      if (verificationFileData != null && verificationFileName != null) {
+                        verificationUrl = await _uploadToCloudinary(verificationFileData, verificationFileName!, 'student_verifications', resourceType: 'auto');
+                        studentService.verificationUrl = verificationUrl;
+                        studentService.isVerified = true;
+                      }
+
                       await DatabaseService(uid: uid).updateUserData({
                         'faculty': selectedFaculty,
                         'specialty': selectedMajor ?? "",
@@ -832,6 +845,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         'skills': skills,
                         'studyStatus': studyStatus,
                         if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+                        if (cvUrl != null) 'cvUrl': cvUrl,
+                        if (cvFileName != null) 'cvFileName': cvFileName,
+                        if (verificationUrl != null) 'verificationUrl': verificationUrl,
+                        if (verificationFileName != null) 'verificationFileName': verificationFileName,
+                        if (verificationUrl != null) 'isVerified': true,
                       });
                     }
                     if (mounted)

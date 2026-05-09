@@ -136,35 +136,42 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              if (status == 'Pending')
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => _updateStatus(context, appId, studentId, companyName, 'Accepted'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF38CC77),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        minimumSize: Size.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(status, style: TextStyle(color: _getStatusColor(status), fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 5),
+                  PopupMenuButton<String>(
+                    onSelected: (newStatus) {
+                      if (newStatus == 'Interview Scheduled') {
+                        _showInterviewDialog(context, appId, studentId, companyName);
+                      } else {
+                        _updateStatus(context, appId, studentId, companyName, newStatus);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'Under Review', child: Text('Under Review')),
+                      const PopupMenuItem(value: 'Interview Scheduled', child: Text('Interview Scheduled')),
+                      const PopupMenuItem(value: 'Accepted', child: Text('Accepted')),
+                      const PopupMenuItem(value: 'Rejected', child: Text('Rejected')),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF229BD8).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(15),
                       ),
-                      child: const Text("Accept", style: TextStyle(color: Colors.white, fontSize: 12)),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () => _updateStatus(context, appId, studentId, companyName, 'Rejected'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF37841),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        minimumSize: Size.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("Update", style: TextStyle(color: Color(0xFF229BD8), fontSize: 12, fontWeight: FontWeight.bold)),
+                          Icon(Icons.arrow_drop_down, color: Color(0xFF229BD8), size: 16),
+                        ],
                       ),
-                      child: const Text("Reject", style: TextStyle(color: Colors.white, fontSize: 12)),
                     ),
-                  ],
-                )
-              else
-                Text(status, style: TextStyle(color: _getStatusColor(status), fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -176,24 +183,40 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
     switch (status) {
       case 'Accepted': return Colors.green;
       case 'Rejected': return Colors.red;
-      case 'Pending': return Colors.orange;
+      case 'Applied':
+      case 'Pending': return Colors.blue;
+      case 'Under Review': return Colors.orange;
+      case 'Interview Scheduled': return Colors.purple;
       default: return Colors.grey;
     }
   }
 
-  Future<void> _updateStatus(BuildContext context, String appId, String studentId, String companyName, String newStatus) async {
+  Future<void> _updateStatus(BuildContext context, String appId, String studentId, String companyName, String newStatus, {String? interviewDate, String? interviewLocation}) async {
     try {
-      // 1. Update Application Status
-      await FirebaseFirestore.instance.collection('applications').doc(appId).update({
-        'status': newStatus,
-      });
+      Map<String, dynamic> updateData = {'status': newStatus};
+      if (interviewDate != null) updateData['interviewDate'] = interviewDate;
+      if (interviewLocation != null) updateData['interviewLocation'] = interviewLocation;
 
-      // 2. Create Notification for Student
+      await FirebaseFirestore.instance.collection('applications').doc(appId).update(updateData);
+
+      String notifTitle = 'Application Update';
+      String notifMessage = 'Your application status for $jobTitle has been updated to $newStatus by $companyName.';
+      
+      if (newStatus == 'Interview Scheduled') {
+        notifTitle = 'Interview Scheduled';
+        notifMessage = 'An interview for $jobTitle has been scheduled on $interviewDate. Location/Link: $interviewLocation.';
+      } else if (newStatus == 'Accepted') {
+        notifTitle = 'Application Accepted';
+        notifMessage = 'Congratulations! Your application for $jobTitle has been accepted by $companyName.';
+      } else if (newStatus == 'Rejected') {
+        notifTitle = 'Application Rejected';
+      }
+
       await FirebaseFirestore.instance.collection('notifications').add({
         'targetId': studentId,
         'targetType': 'student',
-        'title': newStatus == 'Accepted' ? 'Application Accepted' : 'Application Rejected',
-        'message': 'Your application for $jobTitle has been $newStatus by $companyName.',
+        'title': notifTitle,
+        'message': notifMessage,
         'type': 'application_status',
         'status': newStatus,
         'createdAt': FieldValue.serverTimestamp(),
@@ -208,6 +231,50 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
         SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
       );
     }
+  }
+
+  void _showInterviewDialog(BuildContext context, String appId, String studentId, String companyName) {
+    final dateController = TextEditingController();
+    final locationController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Schedule Interview"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: dateController,
+              decoration: const InputDecoration(labelText: "Date & Time (e.g. 15 Oct, 10:00 AM)"),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: locationController,
+              decoration: const InputDecoration(labelText: "Location or Link"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (dateController.text.isNotEmpty && locationController.text.isNotEmpty) {
+                Navigator.pop(ctx);
+                _updateStatus(context, appId, studentId, companyName, 'Interview Scheduled', 
+                  interviewDate: dateController.text, 
+                  interviewLocation: locationController.text);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF229BD8)),
+            child: const Text("Schedule", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildEmptyState() {

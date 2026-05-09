@@ -26,8 +26,13 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
         return Colors.green;
       case 'Rejected':
         return Colors.red;
+      case 'Applied':
       case 'Pending':
+        return Colors.blue;
+      case 'Under Review':
         return Colors.orange;
+      case 'Interview Scheduled':
+        return Colors.purple;
       default:
         return Colors.grey;
     }
@@ -50,34 +55,40 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
             children: [
               Container(
                 color: Colors.white,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: ["All", "Accepted", "Rejected", "Pending"].map((f) {
-                    bool isS = selectedFilter == f;
-                    return TextButton(
-                      onPressed: () => setState(() => selectedFilter = f),
-                      child: Column(
-                        children: [
-                          Text(
-                            AppLocale.tr(context, f),
-                            style: TextStyle(
-                              color: isS
-                                  ? const Color(0xFF229BD8)
-                                  : const Color(0xFF7E848E),
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    children: ["All", "Applied", "Under Review", "Interview Scheduled", "Accepted", "Rejected"].map((f) {
+                      bool isS = selectedFilter == f;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: TextButton(
+                          onPressed: () => setState(() => selectedFilter = f),
+                          child: Column(
+                            children: [
+                              Text(
+                                AppLocale.tr(context, f),
+                                style: TextStyle(
+                                  color: isS
+                                      ? const Color(0xFF229BD8)
+                                      : const Color(0xFF7E848E),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (isS)
+                                Container(
+                                  height: 2,
+                                  width: 20,
+                                  color: const Color(0xFF229BD8),
+                                ),
+                            ],
                           ),
-                          if (isS)
-                            Container(
-                              height: 2,
-                              width: 20,
-                              color: const Color(0xFF229BD8),
-                            ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
               Expanded(
@@ -174,9 +185,22 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
         children: [
           Row(
             children: [
-              const CircleAvatar(
-                backgroundColor: Color(0xFFEBEEF4),
-                child: Icon(Icons.business, color: Color(0xFF229BD8)),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFEBEEF4),
+                  image: (app['companyLogoUrl'] != null && app['companyLogoUrl'].toString().isNotEmpty)
+                      ? DecorationImage(
+                          image: NetworkImage(app['companyLogoUrl']),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: (app['companyLogoUrl'] == null || app['companyLogoUrl'].toString().isEmpty)
+                    ? const Icon(Icons.business, color: Color(0xFF229BD8))
+                    : null,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -217,6 +241,37 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
               ),
             ],
           ),
+          if (status == 'Interview Scheduled') ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF9C27B0).withOpacity(0.05),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF9C27B0).withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 14, color: Color(0xFF9C27B0)),
+                      const SizedBox(width: 8),
+                      Text("Date: \${app['interviewDate'] ?? 'TBD'}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF9C27B0))),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: Color(0xFF9C27B0)),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text("Location/Link: \${app['interviewLocation'] ?? 'TBD'}", style: const TextStyle(fontSize: 12, color: Colors.black87))),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
           const Divider(height: 25),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
