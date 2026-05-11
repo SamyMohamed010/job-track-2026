@@ -11,18 +11,33 @@ class JobsScreen extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('jobs')
-          .orderBy('createdAt', descending: true)
+          .where('status', isEqualTo: 'pending')
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
+          debugPrint("Firestore Error: ${snapshot.error}");
           return const Center(child: Text('Error loading jobs'));
         }
 
+        final docs = snapshot.data?.docs ?? [];
+        
+        // Manual sort to avoid needing a composite index in Firestore
+        final sortedDocs = docs.toList()
+          ..sort((a, b) {
+            final aData = a.data() as Map<String, dynamic>;
+            final bData = b.data() as Map<String, dynamic>;
+            final aTime = aData['createdAt'] as Timestamp?;
+            final bTime = bData['createdAt'] as Timestamp?;
+            if (aTime == null) return 1;
+            if (bTime == null) return -1;
+            return bTime.compareTo(aTime); // Descending
+          });
+
         final jobs =
-            snapshot.data?.docs.map((doc) {
+            sortedDocs.map((doc) {
               final data = doc.data() as Map<String, dynamic>;
               final String salary =
                   data['salary'] ??
@@ -44,8 +59,7 @@ class JobsScreen extends StatelessWidget {
                         : 'https://img.icons8.com/color/512/business.png',
                 status: data['status'] ?? 'pending',
               );
-            }).toList() ??
-            [];
+            }).toList();
 
         if (jobs.isEmpty) {
           return const Center(child: Text('No jobs found'));

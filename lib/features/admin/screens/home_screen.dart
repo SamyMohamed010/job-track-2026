@@ -102,7 +102,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            CustomNotificationButton(onPressed: () => _showNotificationsSheet(context)),
+            StreamBuilder<int>(
+              stream: _getNotificationCountStream(),
+              builder: (context, snapshot) {
+                return CustomNotificationButton(
+                  badgeCount: snapshot.data ?? 0,
+                  onPressed: () => _showNotificationsSheet(context),
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.logout, color: kPrimaryBlue),
               onPressed: () {
@@ -180,6 +188,54 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Stream<int> _getNotificationCountStream() {
+    if (_selectedIndex == 2) {
+      // Companies
+      return FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'company')
+          .where('status', isEqualTo: 'pending')
+          .snapshots()
+          .map((snapshot) => snapshot.docs.length);
+    } else if (_selectedIndex == 0) {
+      // Jobs
+      return FirebaseFirestore.instance
+          .collection('jobs')
+          .where('status', isEqualTo: 'pending')
+          .snapshots()
+          .map((snapshot) => snapshot.docs.length);
+    } else {
+      return FirebaseFirestore.instance
+          .collection('notifications')
+          .where('targetType', isEqualTo: 'admin')
+          .where('isRead', isEqualTo: false)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.length);
+    }
+  }
+
+  Stream<QuerySnapshot> _getNotificationItemsStream() {
+    if (_selectedIndex == 2) {
+      // Companies
+      return FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'company')
+          .where('status', isEqualTo: 'pending')
+          .snapshots();
+    } else if (_selectedIndex == 0) {
+      // Jobs
+      return FirebaseFirestore.instance
+          .collection('jobs')
+          .where('status', isEqualTo: 'pending')
+          .snapshots();
+    } else {
+      return FirebaseFirestore.instance
+          .collection('notifications')
+          .where('targetType', isEqualTo: 'admin')
+          .snapshots();
+    }
+  }
+
   void _showNotificationsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -205,11 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('notifications')
-                      .where('targetType', isEqualTo: 'admin')
-                      .orderBy('createdAt', descending: true)
-                      .snapshots(),
+                  stream: _getNotificationItemsStream(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -222,15 +274,52 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
+                    final docs = snapshot.data?.docs ?? [];
+                    
+                    // Manual sort to avoid needing a composite index in Firestore
+                    final sortedDocs = docs.toList()
+                      ..sort((a, b) {
+                        final aData = a.data() as Map<String, dynamic>;
+                        final bData = b.data() as Map<String, dynamic>;
+                        final aTime = aData['createdAt'] as Timestamp?;
+                        final bTime = bData['createdAt'] as Timestamp?;
+                        if (aTime == null) return 1;
+                        if (bTime == null) return -1;
+                        return bTime.compareTo(aTime); // Descending
+                      });
+
                     return ListView.builder(
-                      itemCount: snapshot.data!.docs.length,
+                      itemCount: sortedDocs.length,
                       itemBuilder: (context, index) {
-                        final data = snapshot.data!.docs[index].data()
+                        final data = sortedDocs[index].data()
                             as Map<String, dynamic>;
+                        
+                        String title = "";
+                        String subtitle = "";
+                        String? logoUrl;
+                        IconData icon = Icons.notifications;
+
+                        if (_selectedIndex == 2) {
+                          title = data['name'] ?? 'Unknown Company';
+                          subtitle = isArabic ? "شركة جديدة في انتظار الموافقة" : "New company pending approval";
+                          icon = Icons.business_outlined;
+                          logoUrl = data['logoUrl'];
+                        } else if (_selectedIndex == 0) {
+                          title = data['title'] ?? 'No title';
+                          subtitle = data['companyName'] ?? (isArabic ? "وظيفة جديدة" : "New job post");
+                          icon = Icons.work_outline;
+                          logoUrl = data['companyLogoUrl'] ?? data['logoUrl'];
+                        } else {
+                          title = data['title'] ?? 'Notification';
+                          subtitle = data['message'] ?? '';
+                          icon = Icons.notifications_none;
+                        }
+
                         return _buildNotificationItem(
-                          title: data['title'] ?? 'New Notification',
-                          subtitle: data['message'] ?? '',
-                          icon: Icons.business_outlined,
+                          title: title,
+                          subtitle: subtitle,
+                          icon: icon,
+                          logoUrl: logoUrl,
                         );
                       },
                     );
@@ -248,6 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
     required IconData icon,
+    String? logoUrl,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -259,12 +349,22 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            height: 40,
+            width: 40,
             decoration: const BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: const Color(0xFF229BD8), size: 20),
+            child: ClipOval(
+              child: logoUrl != null && logoUrl.isNotEmpty
+                  ? Image.network(
+                      logoUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(icon, color: const Color(0xFF229BD8), size: 20),
+                    )
+                  : Icon(icon, color: const Color(0xFF229BD8), size: 20),
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(

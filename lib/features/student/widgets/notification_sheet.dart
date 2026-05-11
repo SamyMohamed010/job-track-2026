@@ -82,12 +82,23 @@ class NotificationSheet extends StatelessWidget {
                     itemBuilder: (context, index) {
                       var doc = notificationsList[index];
                       var data = doc.data() as Map<String, dynamic>;
+                      
+                      String timeStr = "";
+                      if (data['createdAt'] != null) {
+                        final date = (data['createdAt'] as Timestamp).toDate();
+                        timeStr = "${date.day} ${[
+                          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                        ][date.month - 1]}";
+                      }
+
                       return _buildNotificationItem(
                         context,
                         title: data['title'] ?? 'Notification',
                         subtitle: data['message'] ?? '',
-                        icon: Icons.notifications,
-                        time: "",
+                        icon: data['type'] == 'application_status' ? Icons.work_outline : Icons.notifications_none,
+                        logoUrl: data['companyLogoUrl'],
+                        time: timeStr,
                         primaryBlue: primaryBlue,
                         primaryBlueLight: primaryBlueLight,
                         grayBg: grayBg,
@@ -110,6 +121,7 @@ class NotificationSheet extends StatelessWidget {
     required String subtitle,
     required IconData icon,
     required String time,
+    String? logoUrl,
     required Color primaryBlue,
     required Color primaryBlueLight,
     required Color grayBg,
@@ -123,29 +135,54 @@ class NotificationSheet extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            height: 40,
+            width: 40,
             decoration: const BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: primaryBlueLight, size: 20),
+            child: ClipOval(
+              child: logoUrl != null && logoUrl.isNotEmpty
+                  ? Image.network(
+                      logoUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Icon(icon, color: primaryBlueLight, size: 20),
+                    )
+                  : Icon(icon, color: primaryBlueLight, size: 20),
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: primaryBlue,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: primaryBlue,
+                        ),
+                      ),
+                    ),
+                    if (time.isNotEmpty)
+                      Text(
+                        time,
+                        style: TextStyle(color: grayText, fontSize: 10),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: grayText, fontSize: 12)),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: grayText, fontSize: 12),
+                ),
               ],
             ),
           ),

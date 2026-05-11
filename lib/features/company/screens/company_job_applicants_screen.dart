@@ -143,10 +143,11 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
                   const SizedBox(height: 5),
                   PopupMenuButton<String>(
                     onSelected: (newStatus) {
+                      final companyLogoUrl = data['companyLogoUrl'] ?? '';
                       if (newStatus == 'Interview Scheduled') {
-                        _showInterviewDialog(context, appId, studentId, companyName);
+                        _showInterviewDialog(context, appId, studentId, companyName, companyLogoUrl);
                       } else {
-                        _updateStatus(context, appId, studentId, companyName, newStatus);
+                        _updateStatus(context, appId, studentId, companyName, companyLogoUrl, newStatus);
                       }
                     },
                     itemBuilder: (context) => [
@@ -191,7 +192,7 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _updateStatus(BuildContext context, String appId, String studentId, String companyName, String newStatus, {String? interviewDate, String? interviewLocation}) async {
+  Future<void> _updateStatus(BuildContext context, String appId, String studentId, String companyName, String companyLogoUrl, String newStatus, {String? interviewDate, String? interviewLocation}) async {
     try {
       // Check current status to prevent duplicate updates
       final currentDoc = await FirebaseFirestore.instance.collection('applications').doc(appId).get();
@@ -239,6 +240,8 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
         'type': 'application_status',
         'status': newStatus,
         'jobTitle': jobTitle,
+        'companyName': companyName,
+        'companyLogoUrl': companyLogoUrl,
         'createdAt': FieldValue.serverTimestamp(),
         'isRead': false,
       });
@@ -253,7 +256,7 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
     }
   }
 
-  void _showInterviewDialog(BuildContext context, String appId, String studentId, String companyName) {
+  void _showInterviewDialog(BuildContext context, String appId, String studentId, String companyName, String companyLogoUrl) {
     final dateController = TextEditingController();
     final locationController = TextEditingController();
 
@@ -284,7 +287,7 @@ class CompanyJobApplicantsScreen extends StatelessWidget {
             onPressed: () {
               if (dateController.text.isNotEmpty && locationController.text.isNotEmpty) {
                 Navigator.pop(ctx);
-                _updateStatus(context, appId, studentId, companyName, 'Interview Scheduled', 
+                _updateStatus(context, appId, studentId, companyName, companyLogoUrl, 'Interview Scheduled', 
                   interviewDate: dateController.text, 
                   interviewLocation: locationController.text);
               }

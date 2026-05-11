@@ -225,21 +225,22 @@ class _CompanyPostJobScreenState extends State<CompanyPostJobScreen> {
                                 logoUrl = doc.data()?['logoUrl'] ?? '';
                               }
 
-                              await FirebaseFirestore.instance.collection('jobs').add({
-                                'companyId': user.uid,
-                                'companyName': companyName,
-                                'companyLogoUrl': logoUrl,
-                                'title': title,
-                                'description': description,
-                                'requirements': requirements,
-                                'location': location,
-                                'locationType': locationType,
-                                'jobType': jobType,
-                                'salaryFrom': salaryFrom,
-                                'salaryTo': salaryTo,
-                                'deadline': deadline,
-                                'createdAt': FieldValue.serverTimestamp(),
-                              });
+                                await FirebaseFirestore.instance.collection('jobs').add({
+                                  'companyId': user.uid,
+                                  'companyName': companyName,
+                                  'companyLogoUrl': logoUrl,
+                                  'title': title,
+                                  'description': description,
+                                  'requirements': requirements,
+                                  'location': location,
+                                  'locationType': locationType,
+                                  'jobType': jobType,
+                                  'salaryFrom': salaryFrom,
+                                  'salaryTo': salaryTo,
+                                  'deadline': deadline,
+                                  'status': 'pending',
+                                  'createdAt': FieldValue.serverTimestamp(),
+                                });
                             } catch (e) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
