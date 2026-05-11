@@ -16,8 +16,11 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+## Team
+* *Yehia Fadl
+* *Azza Mohammed
+* *Samy  Mohamed
+* *Rayan El-shiekh Saleem
 ## LINK
-*  https://boggy-daughter-843.notion.site/ASU-Career-System-Massar-2ab7c121fe1f496db0030401851a8ad3?source=copy_link
-
-* https://github.com/SamyMohamed010/job-trace
-* [SamyMohamed](https://github.com/SamyMohamed010/job-track-2026)ا
+* [Notion Link](https://boggy-daughter-843.notion.site/ASU-Career-System-Massar-2ab7c121fe1f496db0030401851a8ad3?source=copy_link)
+* [SamyMohamed](https://github.com/SamyMohamed010/job-track-2026)
