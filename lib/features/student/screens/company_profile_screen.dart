@@ -209,6 +209,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
               company: job['companyName'] ?? '',
               logoUrl: logoUrl,
               location: location,
+              locationType: job['locationType'] ?? 'On-site',
               description: job['description'] ?? '',
               requirements: job['requirements'] ?? '',
               jobType: type,

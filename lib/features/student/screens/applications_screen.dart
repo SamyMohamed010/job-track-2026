@@ -309,6 +309,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                           company: jobData['companyName'] ?? '',
                           logoUrl: jobData['companyLogoUrl'] ?? '',
                           location: jobData['location'] ?? '',
+                          locationType: jobData['locationType'] ?? 'On-site',
                           description: jobData['description'] ?? '',
                           requirements: jobData['requirements'] ?? '',
                           jobType: jobData['jobType'] ?? '',

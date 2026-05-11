@@ -25,6 +25,7 @@ class Job {
   final String title;
   final String company;
   final String location;
+  final String locationType;
   final String type; // 'Internship', 'Part-time', 'Full-time'
   final String logoUrl;
   final String description;
@@ -38,6 +39,7 @@ class Job {
     required this.title,
     required this.company,
     required this.location,
+    required this.locationType,
     required this.type,
     required this.logoUrl,
     required this.description,
@@ -142,6 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     data['companyName'] ?? 'Unknown Company',
                                 location:
                                     data['location'] ?? 'Unknown Location',
+                                locationType:
+                                    data['locationType'] ?? 'On-site',
                                 type: data['jobType'] ?? 'Full-time',
                                 logoUrl: data['companyLogoUrl'] ?? '',
                                 description: data['description'] ?? '',
@@ -565,6 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             company: job.company,
                             logoUrl: job.logoUrl,
                             location: job.location,
+                            locationType: job.locationType,
                             description: job.description,
                             requirements: job.requirements,
                             jobType: job.type,

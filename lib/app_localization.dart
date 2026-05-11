@@ -75,6 +75,7 @@ class AppLocalization extends ChangeNotifier {
       'Maybe Later': 'Maybe Later',
       'Verify Now': 'Verify Now',
       'Go to Profile to verify': 'Go to Profile to verify',
+      'Salary Negotiable': 'Salary Negotiable',
     },
     'ar': {
       'login': 'تسجيل الدخول',
@@ -140,6 +141,7 @@ class AppLocalization extends ChangeNotifier {
       'Maybe Later': 'ليس الآن',
       'Verify Now': 'وثق الآن',
       'Go to Profile to verify': 'انتقل للملف الشخصي للتوثيق',
+      'Salary Negotiable': 'راتب قابل للتفاوض',
     }
   };
 

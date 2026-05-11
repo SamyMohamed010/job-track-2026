@@ -18,6 +18,7 @@ class JobDetailsScreen extends StatefulWidget {
   final String description;
   final String requirements;
   final String jobType;
+  final String locationType;
   final String salaryFrom;
   final String salaryTo;
 
@@ -29,6 +30,7 @@ class JobDetailsScreen extends StatefulWidget {
     required this.company, 
     required this.logoUrl,
     required this.location,
+    required this.locationType,
     required this.description,
     required this.requirements,
     required this.jobType,
@@ -123,8 +125,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
               spacing: 10,
               alignment: WrapAlignment.center,
               children: [
-                _buildInfoChip(Icons.location_on, widget.location, Colors.red),
-                _buildInfoChip(Icons.monetization_on, "\${widget.salaryFrom} - \${widget.salaryTo}", Colors.green),
+                _buildInfoChip(Icons.location_on, "${widget.location} (${widget.locationType})", Colors.red),
+                _buildInfoChip(
+                  Icons.monetization_on, 
+                  widget.salaryFrom.isEmpty || widget.salaryFrom == "0"
+                    ? AppLocale.tr(context, "Salary Negotiable")
+                    : "\$${widget.salaryFrom} - \$${widget.salaryTo}", 
+                  Colors.green
+                ),
                 _buildInfoChip(Icons.work, widget.jobType, Colors.blue),
               ],
             ),
