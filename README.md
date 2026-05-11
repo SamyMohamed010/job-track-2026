@@ -23,5 +23,5 @@ samples, guidance on mobile development, and a full API reference.
 * *Rayan El-shiekh Saleem
 ## LINK
 * [Notion Link](https://boggy-daughter-843.notion.site/ASU-Career-System-Massar-2ab7c121fe1f496db0030401851a8ad3?source=copy_link)
-* [SamyMohamed](https://github.com/SamyMohamed010/job-track-2026)
-* [LinkDemo](https://drive.google.com/drive/folders/1Giy7v9Fj5HXfzvc2wE0oi5x0FZ2015So?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto)
+* [Git Hub Link](https://github.com/SamyMohamed010/job-track-2026)
+* [Link Demo](https://drive.google.com/drive/folders/1Giy7v9Fj5HXfzvc2wE0oi5x0FZ2015So?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto)
