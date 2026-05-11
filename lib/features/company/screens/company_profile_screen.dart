@@ -8,6 +8,8 @@ import 'company_edit_job_screen.dart';
 import 'company_notifications_sheet.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:intl/intl.dart';
 
 class CompanyProfileScreen extends StatefulWidget {
   const CompanyProfileScreen({super.key});
@@ -21,6 +23,67 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
 
   void _refresh() {
     setState(() {});
+  }
+
+  Stream<List<Map<String, dynamic>>> _getNotificationCountStream() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return Stream.value([]);
+
+    final appsStream = FirebaseFirestore.instance
+        .collection('applications')
+        .where('companyId', isEqualTo: user.uid)
+        .snapshots();
+
+    final jobsStream = FirebaseFirestore.instance
+        .collection('jobs')
+        .where('companyId', isEqualTo: user.uid)
+        .snapshots();
+
+    final directNotifsStream = FirebaseFirestore.instance
+        .collection('notifications')
+        .where('targetId', isEqualTo: user.uid)
+        .snapshots();
+
+    return Rx.combineLatest3(
+      appsStream,
+      jobsStream,
+      directNotifsStream,
+      (QuerySnapshot appSnap, QuerySnapshot jobSnap, QuerySnapshot directSnap) {
+        List<Map<String, dynamic>> items = [];
+        final now = DateTime.now();
+
+        for (var doc in appSnap.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (data['status'] == 'Applied') {
+            items.add({'id': doc.id});
+          }
+        }
+
+        for (var doc in jobSnap.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final status = data['status'] as String?;
+          if (status == 'approved') {
+            items.add({'id': '${doc.id}_approved'});
+          }
+
+          final deadlineStr = data['deadline'] as String?;
+          if (deadlineStr != null && deadlineStr.isNotEmpty) {
+            try {
+              final deadline = DateFormat('yyyy-MM-dd').parse(deadlineStr);
+              if (deadline.difference(now).inDays <= 3 && deadline.isAfter(now)) {
+                items.add({'id': '${doc.id}_deadline'});
+              }
+            } catch (_) {}
+          }
+        }
+
+        for (var doc in directSnap.docs) {
+          items.add({'id': doc.id});
+        }
+
+        return items;
+      },
+    );
   }
 
   @override
@@ -91,9 +154,45 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                         child: const Icon(Icons.logout, color: Color(0xFF7E848E), size: 22),
                       ),
                       const SizedBox(width: 16),
-                      GestureDetector(
-                        onTap: () => showCompanyNotifications(context),
-                        child: const Icon(Icons.notifications, color: Color(0xFFFDA00C)),
+                      StreamBuilder<List<Map<String, dynamic>>>(
+                        stream: _getNotificationCountStream(),
+                        builder: (context, snapshot) {
+                          final count = snapshot.data?.length ?? 0;
+                          return GestureDetector(
+                            onTap: () => showCompanyNotifications(context),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                const Icon(Icons.notifications, color: Color(0xFFFDA00C)),
+                                if (count > 0)
+                                  Positioned(
+                                    right: -5,
+                                    top: -5,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      constraints: const BoxConstraints(
+                                        minWidth: 16,
+                                        minHeight: 16,
+                                      ),
+                                      child: Text(
+                                        '$count',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }
                       ),
                     ],
                   ),
