@@ -15,7 +15,8 @@ class CompanyProfileScreen extends StatefulWidget {
 }
 
 class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
-  bool _isExpanded = false;
+  bool _isAboutExpanded = false;
+  bool _isLocationExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -76,26 +77,42 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                 const SizedBox(height: 10),
                 Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.location_on, color: Colors.redAccent, size: 18),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () async {
-                          final Uri url = Uri.parse("https://www.google.com/maps/search/?api=1&query=$location");
-                          if (await canLaunchUrl(url)) await launchUrl(url);
-                        },
-                        child: Text(
-                          location,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.grey, decoration: TextDecoration.underline),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isLocationExpanded = !_isLocationExpanded;
+                      });
+                    },
+                    onLongPress: () async {
+                      final Uri url = Uri.parse("https://www.google.com/maps/search/?api=1&query=$location");
+                      if (await canLaunchUrl(url)) await launchUrl(url);
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Icon(Icons.location_on, color: Colors.redAccent, size: 18),
                         ),
-                      ),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            location,
+                            textAlign: TextAlign.center,
+                            maxLines: _isLocationExpanded ? 10 : 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.grey, 
+                              decoration: TextDecoration.underline
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 25),
 
@@ -106,15 +123,15 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
                     children: [
                       Text(
                         overview,
-                        maxLines: _isExpanded ? 20 : 3,
+                        maxLines: _isAboutExpanded ? 20 : 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Colors.black54, height: 1.5),
                       ),
                       if (overview.length > 100)
                         InkWell(
-                          onTap: () => setState(() => _isExpanded = !_isExpanded),
+                          onTap: () => setState(() => _isAboutExpanded = !_isAboutExpanded),
                           child: Text(
-                            isAr ? (_isExpanded ? "عرض أقل" : "عرض المزيد >") : (_isExpanded ? "See less" : "See more >"),
+                            isAr ? (_isAboutExpanded ? "عرض أقل" : "عرض المزيد >") : (_isAboutExpanded ? "See less" : "See more >"),
                             style: const TextStyle(color: Color(0xFF229BD8), fontWeight: FontWeight.bold)
                           ),
                         ),

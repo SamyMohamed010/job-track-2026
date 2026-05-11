@@ -13,7 +13,8 @@ class CompanyDetailsScreen extends StatefulWidget {
 }
 
 class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
-  bool _isExpanded = false;
+  bool _isAboutExpanded = false;
+  bool _isLocationExpanded = false;
 
   // 1. دالة عامة لفتح أي رابط (خريطة، رخصة، موقع)
   Future<void> _openUrl(String urlString) async {
@@ -88,7 +89,7 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
                     widget.company.description.isNotEmpty 
                         ? widget.company.description 
                         : "No description provided by the company.",
-                    maxLines: _isExpanded ? 100 : 3,
+                    maxLines: _isAboutExpanded ? 100 : 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: Colors.grey[700], height: 1.5),
                   ),
@@ -96,11 +97,11 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
                   InkWell(
                     onTap: () {
                       setState(() {
-                        _isExpanded = !_isExpanded;
+                        _isAboutExpanded = !_isAboutExpanded;
                       });
                     },
                     child: Text(
-                      _isExpanded ? "See less <" : "See more >",
+                      _isAboutExpanded ? "See less <" : "See more >",
                       style: const TextStyle(
                         color: Colors.blue,
                         fontWeight: FontWeight.bold,
@@ -294,21 +295,39 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
 
-          // اللوكيشن بقى InkWell يعني قابل للضغط
-          InkWell(
-            onTap: _openMap,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.location_on, color: Colors.red, size: 16),
-                Text(
-                  " ${widget.company.location}",
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    decoration: TextDecoration.underline,
+          // اللوكيشن مع ميزة الـ Expand ومنع الـ Overflow
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _isLocationExpanded = !_isLocationExpanded;
+                });
+              },
+              onLongPress: _openMap, // ضغطة طويلة تفتح الخريطة
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 3),
+                    child: Icon(Icons.location_on, color: Colors.red, size: 16),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      widget.company.location,
+                      textAlign: TextAlign.center,
+                      maxLines: _isLocationExpanded ? 10 : 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.blue,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const Text("Healthcare", style: TextStyle(color: Colors.grey)),
@@ -348,9 +367,12 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
           children: [
             Icon(icon, color: Colors.grey, size: 20),
             const SizedBox(width: 15),
-            Text(
-              text,
-              style: const TextStyle(color: Colors.blue, fontSize: 15),
+            Expanded(
+              child: Text(
+                text,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.blue, fontSize: 15),
+              ),
             ),
           ],
         ),

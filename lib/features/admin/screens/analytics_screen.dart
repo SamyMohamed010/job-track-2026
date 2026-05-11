@@ -100,24 +100,36 @@ class AnalyticsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 30),
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('jobs').snapshots(),
-            builder: (context, jobSnapshot) {
-              if (jobSnapshot.connectionState == ConnectionState.waiting) {
+            stream: FirebaseFirestore.instance.collection('applications').snapshots(),
+            builder: (context, appSnapshot) {
+              if (appSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
               
-              final jobDocs = jobSnapshot.data?.docs ?? [];
+              final appDocs = appSnapshot.data?.docs ?? [];
               final Map<String, int> roleCounts = {};
               
-              // Group by job title
-              for (var doc in jobDocs) {
+              // Group by job title from applications
+              for (var doc in appDocs) {
                 final data = doc.data() as Map<String, dynamic>;
-                final title = data['title']?.toString() ?? 'Other';
+                String title = data['jobTitle']?.toString() ?? 'Other';
                 
-                // Get the first word or main part of the title for cleaner display
-                final shortTitle = title.split(' ').first;
+                // Cleanup and normalize title
+                title = title.trim();
+                if (title.toLowerCase() == 'it') {
+                  title = 'IT';
+                } else if (title.isNotEmpty) {
+                  // Capitalize each word for professional look
+                  title = title.split(' ').map((word) => word.isNotEmpty 
+                    ? word[0].toUpperCase() + word.substring(1).toLowerCase() 
+                    : '').join(' ');
+                }
+
+                // If title is too long, take the first two words for the chart label
+                final words = title.split(' ');
+                final displayTitle = words.length > 1 ? "${words[0]} ${words[1]}" : words[0];
                 
-                roleCounts[shortTitle] = (roleCounts[shortTitle] ?? 0) + 1;
+                roleCounts[displayTitle] = (roleCounts[displayTitle] ?? 0) + 1;
               }
               
               // Sort by count descending
@@ -143,7 +155,7 @@ class AnalyticsScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: topRoles.isEmpty 
-                  ? [const Text("No jobs available to analyze")]
+                  ? [const Text("No applications available")]
                   : List.generate(topRoles.length, (index) {
                       final role = topRoles[index];
                       // Scale height proportional to max count (min height 30)
@@ -151,7 +163,7 @@ class AnalyticsScreen extends StatelessWidget {
                       return Expanded(
                         child: _buildBarChartItem(
                           role.key,
-                          height < 30 ? 30 : height, // Ensure minimum visibility
+                          height < 30 ? 30 : height, 
                           colors[index % colors.length]
                         ),
                       );
@@ -209,22 +221,29 @@ class AnalyticsScreen extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 30, // عرضنا العمود شوية عشان يبقى أوضح
+          width: 30,
           height: height,
           decoration: BoxDecoration(
             color: color,
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(5),
-            ), // دوران من فوق بس
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
+        SizedBox(
+          height: 35, // Fixed height for labels to keep them aligned
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+              height: 1.1,
+            ),
           ),
         ),
       ],
