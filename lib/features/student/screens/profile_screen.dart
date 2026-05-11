@@ -312,10 +312,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (newCvUrl != null) 'cvFileName': studentService.cvFileName,
           if (newVerificationUrl != null) 'verificationUrl': newVerificationUrl,
           if (newVerificationUrl != null) 'verificationFileName': studentService.verificationFileName,
-          if (newVerificationUrl != null) 'isVerified': true,
+          if (newVerificationUrl != null) 'isVerified': false,
+          'skills': studentService.skills,
         });
         if (newVerificationUrl != null) {
-          studentService.isVerified = true;
+          studentService.isVerified = false;
         }
       }
     } else {
@@ -384,7 +385,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: Color(0xFFFDA00C),
                 size: 20,
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacementNamed(context, '/student_home');
+                }
+              },
             ),
             title: Row(
               children: [

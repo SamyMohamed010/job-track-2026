@@ -37,6 +37,27 @@ class StudentService {
   String? verificationUrl;
   
   bool isVerified = false; // Will be set from database
+
+  void clear() {
+    name = "";
+    email = "";
+    faculty = "";
+    specialty = "";
+    program = "";
+    graduationYear = "";
+    skills = [];
+    cvFileName = null;
+    cvFileData = null;
+    cvUrl = null;
+    profileImage = "assets/images/pro.jpg";
+    profileImageBytes = null;
+    profileImageUrl = null;
+    about = "";
+    verificationFileName = null;
+    verificationFileData = null;
+    verificationUrl = null;
+    isVerified = false;
+  }
 }
 
 final studentService = StudentService();

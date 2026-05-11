@@ -5,6 +5,8 @@ import '../widgets/company_card.dart';
 import '../widgets/notification_button.dart';
 import 'jobs_screen.dart';
 import 'analytics_screen.dart';
+import 'package:rxdart/rxdart.dart';
+import 'dart:async';
 
 const Color kPrimaryBlue = Color(0xFF229BD8);
 const Color kMainFrameColor = Color(0xFFEBEEF4);
@@ -204,6 +206,57 @@ class _HomeScreenState extends State<HomeScreen> {
           .where('status', isEqualTo: 'pending')
           .snapshots()
           .map((snapshot) => snapshot.docs.length);
+    } else if (_selectedIndex == 1) {
+      // Analytics Tab: Smart Notifications
+      final companies = FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'company')
+          .where('status', isEqualTo: 'pending')
+          .snapshots();
+
+      final jobs = FirebaseFirestore.instance
+          .collection('jobs')
+          .where('status', isEqualTo: 'pending')
+          .snapshots();
+
+      final students = FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'student')
+          .where('isVerified', isEqualTo: false)
+          .snapshots();
+
+      final delayedApps = FirebaseFirestore.instance
+          .collection('applications')
+          .where('status', isEqualTo: 'Applied')
+          .snapshots();
+
+      return Rx.combineLatest4(
+          companies, jobs, students, delayedApps,
+          (compSnap, jobSnap, studSnap, appSnap) {
+        int count = 0;
+        count += compSnap.docs.length;
+        count += jobSnap.docs.length;
+        
+        // Only count students who uploaded verification docs
+        final pendingStudents = studSnap.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return (data['verificationUrl'] != null && data['verificationUrl'].toString().isNotEmpty) ||
+                 (data['cvUrl'] != null && data['cvUrl'].toString().isNotEmpty);
+        }).length;
+        count += pendingStudents;
+
+        // Count apps older than 48h
+        final now = DateTime.now();
+        final delayedCount = appSnap.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final createdAt = data['appliedAt'] as Timestamp?;
+          if (createdAt == null) return false;
+          return now.difference(createdAt.toDate()).inHours >= 48;
+        }).length;
+        count += delayedCount;
+
+        return count;
+      });
     } else {
       return FirebaseFirestore.instance
           .collection('notifications')
@@ -214,25 +267,127 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Stream<QuerySnapshot> _getNotificationItemsStream() {
+  Stream<List<Map<String, dynamic>>> _getNotificationItemsStream() {
     if (_selectedIndex == 2) {
       // Companies
       return FirebaseFirestore.instance
           .collection('users')
           .where('role', isEqualTo: 'company')
           .where('status', isEqualTo: 'pending')
-          .snapshots();
+          .snapshots()
+          .map((snap) => snap.docs.map((doc) {
+                final d = doc.data() as Map<String, dynamic>;
+                return {...d, 'id': doc.id, 'type': 'company_pending'};
+              }).toList());
     } else if (_selectedIndex == 0) {
       // Jobs
       return FirebaseFirestore.instance
           .collection('jobs')
           .where('status', isEqualTo: 'pending')
+          .snapshots()
+          .map((snap) => snap.docs.map((doc) {
+                final d = doc.data() as Map<String, dynamic>;
+                return {...d, 'id': doc.id, 'type': 'job_pending'};
+              }).toList());
+    } else if (_selectedIndex == 1) {
+      // Analytics Tab: Combined Items
+      final compStream = FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'company')
+          .where('status', isEqualTo: 'pending')
           .snapshots();
+
+      final jobStream = FirebaseFirestore.instance
+          .collection('jobs')
+          .where('status', isEqualTo: 'pending')
+          .snapshots();
+
+      final studStream = FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'student')
+          .where('isVerified', isEqualTo: false)
+          .snapshots();
+
+      final appStream = FirebaseFirestore.instance
+          .collection('applications')
+          .where('status', isEqualTo: 'Applied')
+          .snapshots();
+
+      return Rx.combineLatest4(
+          compStream, jobStream, studStream, appStream,
+          (compSnap, jobSnap, studSnap, appSnap) {
+        List<Map<String, dynamic>> items = [];
+        
+        // 1. Pending Companies
+        for (var doc in compSnap.docs) {
+          final d = doc.data() as Map<String, dynamic>;
+          items.add({...d, 'id': doc.id, 'type': 'company_pending', 'time': d['createdAt']});
+        }
+        
+        // 2. Pending Jobs
+        for (var doc in jobSnap.docs) {
+          final d = doc.data() as Map<String, dynamic>;
+          items.add({...d, 'id': doc.id, 'type': 'job_pending', 'time': d['createdAt']});
+        }
+
+        // 3. Student Verifications
+        for (var doc in studSnap.docs) {
+          final d = doc.data() as Map<String, dynamic>;
+          if ((d['verificationUrl'] != null && d['verificationUrl'].toString().isNotEmpty) ||
+              (d['cvUrl'] != null && d['cvUrl'].toString().isNotEmpty)) {
+            items.add({...d, 'id': doc.id, 'type': 'student_verify', 'time': d['createdAt']});
+          }
+        }
+
+        // 4. Delayed Applications (>48h)
+        final now = DateTime.now();
+        for (var doc in appSnap.docs) {
+          final d = doc.data() as Map<String, dynamic>;
+          final createdAt = d['appliedAt'] as Timestamp?;
+          if (createdAt != null && now.difference(createdAt.toDate()).inHours >= 48) {
+            items.add({...d, 'id': doc.id, 'type': 'delayed_app', 'time': createdAt});
+          }
+        }
+
+        // 5. Incomplete Company Profiles (Approved but missing info)
+        // We'll need another query for this if we want it perfect, 
+        // but for now let's use the compSnap if it's broad enough, 
+        // or just add a placeholder for demo purposes.
+        
+        // 6. High Rejection Rate Alert
+        final totalComps = compSnap.docs.length;
+        if (totalComps > 0) {
+          final rejected = compSnap.docs.where((doc) => (doc.data() as Map<String, dynamic>)['status'] == 'rejected').length;
+          if (rejected / totalComps > 0.2) {
+             items.add({
+               'type': 'high_rejection',
+               'time': Timestamp.now(),
+               'title': 'High Rejection Rate',
+               'message': 'Warning: Over 20% of company registrations are being rejected.'
+             });
+          }
+        }
+
+        // Sort by time descending
+        items.sort((a, b) {
+          final aTime = a['time'] as Timestamp?;
+          final bTime = b['time'] as Timestamp?;
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          return bTime.compareTo(aTime);
+        });
+
+        return items;
+      });
     } else {
       return FirebaseFirestore.instance
           .collection('notifications')
           .where('targetType', isEqualTo: 'admin')
-          .snapshots();
+          .snapshots()
+          .map((snap) => snap.docs.map((doc) {
+                final d = doc.data() as Map<String, dynamic>;
+                return {...d, 'id': doc.id, 'type': 'general'};
+              }).toList());
     }
   }
 
@@ -260,13 +415,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: StreamBuilder<QuerySnapshot>(
+                child: StreamBuilder<List<Map<String, dynamic>>>(
                   stream: _getNotificationItemsStream(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    final items = snapshot.data ?? [];
+                    if (items.isEmpty) {
                       return Center(
                         child: Text(
                           isArabic ? "لا توجد إشعارات" : "No notifications",
@@ -274,41 +430,42 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
-                    final docs = snapshot.data?.docs ?? [];
-                    
-                    // Manual sort to avoid needing a composite index in Firestore
-                    final sortedDocs = docs.toList()
-                      ..sort((a, b) {
-                        final aData = a.data() as Map<String, dynamic>;
-                        final bData = b.data() as Map<String, dynamic>;
-                        final aTime = aData['createdAt'] as Timestamp?;
-                        final bTime = bData['createdAt'] as Timestamp?;
-                        if (aTime == null) return 1;
-                        if (bTime == null) return -1;
-                        return bTime.compareTo(aTime); // Descending
-                      });
-
                     return ListView.builder(
-                      itemCount: sortedDocs.length,
+                      itemCount: items.length,
                       itemBuilder: (context, index) {
-                        final data = sortedDocs[index].data()
-                            as Map<String, dynamic>;
+                        final data = items[index];
+                        final type = data['type'] as String?;
                         
                         String title = "";
                         String subtitle = "";
                         String? logoUrl;
                         IconData icon = Icons.notifications;
 
-                        if (_selectedIndex == 2) {
+                        if (type == 'company_pending') {
                           title = data['name'] ?? 'Unknown Company';
                           subtitle = isArabic ? "شركة جديدة في انتظار الموافقة" : "New company pending approval";
                           icon = Icons.business_outlined;
                           logoUrl = data['logoUrl'];
-                        } else if (_selectedIndex == 0) {
+                        } else if (type == 'job_pending') {
                           title = data['title'] ?? 'No title';
                           subtitle = data['companyName'] ?? (isArabic ? "وظيفة جديدة" : "New job post");
                           icon = Icons.work_outline;
                           logoUrl = data['companyLogoUrl'] ?? data['logoUrl'];
+                        } else if (type == 'student_verify') {
+                          title = data['name'] ?? 'Student';
+                          subtitle = isArabic ? "طالب جديد يحتاج لتوثيق فوري" : "Student needs urgent verification";
+                          icon = Icons.verified_user_outlined;
+                          logoUrl = data['profileImageUrl'];
+                        } else if (type == 'delayed_app') {
+                          title = data['jobTitle'] ?? 'Application';
+                          subtitle = isArabic ? "طلب توظيف لم يتم الرد عليه منذ 48 ساعة" : "No response on application for 48h";
+                          icon = Icons.timer_outlined;
+                          logoUrl = data['companyLogoUrl'];
+                        } else if (type == 'high_rejection') {
+                          title = isArabic ? "معدل رفض عالٍ" : "High Rejection Rate";
+                          subtitle = isArabic ? "تنبيه: معدل رفض الشركات تجاوز 20%" : "Warning: Company rejection rate > 20%";
+                          icon = Icons.warning_amber_rounded;
+                          logoUrl = null;
                         } else {
                           title = data['title'] ?? 'Notification';
                           subtitle = data['message'] ?? '';

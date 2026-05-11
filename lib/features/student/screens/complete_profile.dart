@@ -242,13 +242,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
+              await AuthService().signOut();
+              studentService.clear();
+              if (mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
             },
             child: Text(
               isAr ? "خروج" : "Logout",
@@ -841,7 +845,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       if (verificationFileData != null && verificationFileName != null) {
                         verificationUrl = await _uploadToCloudinary(verificationFileData, verificationFileName!, 'student_verifications', resourceType: 'raw');
                         studentService.verificationUrl = verificationUrl;
-                        studentService.isVerified = true;
+                        // studentService.isVerified = true; // Wait for admin
                       }
 
                       await DatabaseService(uid: uid).updateUserData({
@@ -856,17 +860,21 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         if (cvFileName != null) 'cvFileName': cvFileName,
                         if (verificationUrl != null) 'verificationUrl': verificationUrl,
                         if (verificationFileName != null) 'verificationFileName': verificationFileName,
-                        if (verificationUrl != null) 'isVerified': true,
+                        if (verificationUrl != null) 'isVerified': false, // Admin needs to verify
                       });
                     }
-                    if (mounted)
-                      Navigator.pushReplacement(
+                    if (mounted) {
+                      await AuthService().signOut();
+                      studentService.clear();
+                      studentService.isVerified = false; // Reset local state
+                      Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              HomeScreen(userName: widget.userName),
+                          builder: (context) => const LoginScreen(),
                         ),
+                        (route) => false,
                       );
+                    }
                   } catch (e) {
                     if (mounted)
                       ScaffoldMessenger.of(context).showSnackBar(

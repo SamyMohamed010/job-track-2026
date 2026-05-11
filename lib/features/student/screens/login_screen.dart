@@ -317,6 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (doc.exists) {
                             final data = doc.data() as Map<String, dynamic>;
                             if (data['role'] == 'student') {
+                              studentService.clear();
                               studentService.name = data['name'] ?? 'Student';
                               studentService.email = data['email'] ?? email;
                               studentService.faculty = data['faculty'] ?? '';

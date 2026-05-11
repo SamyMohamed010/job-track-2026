@@ -9,6 +9,7 @@ import 'profile_screen.dart';
 import '../../../app_localization.dart';
 import '../../widgets/language_toggle.dart';
 import '../widgets/notification_sheet.dart';
+import '../../../core/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final String userName;
@@ -297,15 +298,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             Navigator.pop(context);
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
-                              (route) => false,
-                            );
+                            await AuthService().signOut();
+                            studentService.clear();
+                            if (mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginScreen(),
+                                ),
+                                (route) => false,
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red.shade50,
